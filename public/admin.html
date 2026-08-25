@@ -3,17 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Honeydees | Staff Administration Portal</title>
+  <title>Honeydees | Admin Portal</title>
+  <link rel="manifest" href="/manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <style>
-    :root { --gold: #c59b27; --gold-dark: #9e7914; }
-    body { background-color: #faf8f5; font-family: 'Plus Jakarta Sans', sans-serif; }
-    .serif { font-family: 'Playfair Display', serif; }
-  </style>
+  <style>body { background-color: #faf8f5; font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
 <body class="min-h-screen flex flex-col justify-between text-slate-800">
 
@@ -21,11 +18,11 @@
   <div id="loginGate" class="my-auto py-16">
     <div class="max-w-sm mx-auto bg-white p-8 rounded-3xl border border-stone-200 shadow-xl text-center space-y-4">
       <div class="w-12 h-12 bg-[#c59b27] text-white rounded-2xl mx-auto flex items-center justify-center font-bold text-xl">H</div>
-      <h2 class="serif text-2xl font-bold text-slate-900">Honeydees Staff Admin</h2>
-      <p class="text-xs text-slate-500">Enter your Cloudflare Administrator Secret.</p>
+      <h2 class="text-xl font-bold text-slate-900">Honeydees Administration</h2>
+      <p class="text-xs text-slate-500">Enter Cloudflare Administrator Password.</p>
       
       <input type="password" id="passInput" placeholder="Enter password" class="w-full p-3 border rounded-xl text-xs bg-slate-50 outline-none" onkeydown="if(event.key==='Enter') loginAdmin()">
-      <button onclick="loginAdmin()" id="loginBtn" class="w-full py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow">
+      <button onclick="loginAdmin()" id="loginBtn" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl text-xs shadow">
         Unlock Portal →
       </button>
     </div>
@@ -35,166 +32,172 @@
   <div id="adminApp" class="hidden flex-grow flex flex-col">
     <nav class="bg-white border-b border-stone-200 sticky top-0 z-40">
       <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-        <div class="flex items-center gap-3">
-          <span class="w-8 h-8 rounded-lg bg-[#c59b27] text-white font-bold flex items-center justify-center">H</span>
-          <span class="font-bold text-sm text-slate-900">Honeydees Console</span>
-        </div>
-        <button onclick="logout()" class="px-3.5 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-xs font-bold">Logout</button>
+        <span class="font-bold text-sm text-slate-900 flex items-center gap-2">
+          <span class="w-7 h-7 rounded-lg bg-[#c59b27] text-white font-bold flex items-center justify-center text-xs">H</span>
+          Honeydees Admin
+        </span>
+        <button onclick="location.reload()" class="px-3 py-1 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold">Logout</button>
       </div>
     </nav>
 
-    <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full space-y-6">
-      
-      <!-- NAV TABS -->
-      <div class="flex gap-2 border-b pb-3">
-        <button onclick="switchTab('tabOrders')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold">📦 Orders Queue</button>
-        <button onclick="switchTab('tabMenu')" class="px-4 py-2 bg-white border rounded-xl text-xs font-bold text-slate-700">🍽️ Menu Items</button>
-        <button onclick="switchTab('tabSettings')" class="px-4 py-2 bg-white border rounded-xl text-xs font-bold text-slate-700">⚙️ Settings</button>
+    <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full space-y-5">
+      <div class="flex gap-2 border-b pb-2">
+        <button onclick="switchTab('tabOrders')" class="px-4 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold">📦 Orders Queue</button>
+        <button onclick="switchTab('tabMenu')" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700">🍽️ Menu Items</button>
+        <button onclick="switchTab('tabSettings')" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700">⚙️ Settings</button>
       </div>
 
-      <!-- TAB 1: ORDERS -->
-      <div id="tabOrders" class="space-y-4">
+      <!-- ORDERS TAB -->
+      <div id="tabOrders" class="space-y-3">
         <div id="ordersList" class="space-y-3"></div>
       </div>
 
-      <!-- TAB 2: MENU MANAGER -->
-      <div id="tabMenu" class="hidden space-y-4">
+      <!-- MENU TAB -->
+      <div id="tabMenu" class="hidden space-y-3">
         <div class="flex justify-between items-center">
-          <h3 class="font-bold text-slate-900">Friday Night Food Items</h3>
-          <button onclick="addNewItem()" class="px-3.5 py-2 bg-[#c59b27] text-white rounded-xl text-xs font-bold">+ Add Food Item</button>
+          <h3 class="font-bold text-slate-900 text-sm">Menu Management</h3>
+          <button onclick="addNewFoodItem()" class="px-3.5 py-1.5 bg-[#c59b27] text-white rounded-xl text-xs font-bold">+ Add Item</button>
         </div>
-        <div id="menuEditorList" class="space-y-3"></div>
+        <div id="menuItemsEditor" class="space-y-3"></div>
       </div>
 
-      <!-- TAB 3: SETTINGS -->
-      <div id="tabSettings" class="hidden bg-white p-6 rounded-2xl border border-stone-200 space-y-4 text-xs">
-        <h3 class="font-bold text-sm text-slate-900">EFT Banking & Collection Parameters</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div><label class="font-bold">Collection Venue</label><input type="text" id="cfgAddr" class="w-full p-2.5 border rounded-xl mt-1"></div>
-          <div><label class="font-bold">Delivery Fee (R)</label><input type="number" id="cfgFee" class="w-full p-2.5 border rounded-xl mt-1"></div>
-          <div><label class="font-bold">Bank Name</label><input type="text" id="cfgBank" class="w-full p-2.5 border rounded-xl mt-1"></div>
-          <div><label class="font-bold">Account Number</label><input type="text" id="cfgAcc" class="w-full p-2.5 border rounded-xl mt-1"></div>
+      <!-- SETTINGS TAB -->
+      <div id="tabSettings" class="hidden bg-white p-5 rounded-2xl border border-stone-200 space-y-3 text-xs">
+        <h3 class="font-bold text-sm text-slate-900">EFT Banking & Delivery Parameters</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label class="font-bold">Collection Venue</label><input type="text" id="cfgAddr" class="w-full p-2 border rounded-xl mt-1"></div>
+          <div><label class="font-bold">Delivery Fee (R)</label><input type="number" id="cfgFee" class="w-full p-2 border rounded-xl mt-1"></div>
+          <div><label class="font-bold">Bank Name</label><input type="text" id="cfgBank" class="w-full p-2 border rounded-xl mt-1"></div>
+          <div><label class="font-bold">Account Number</label><input type="text" id="cfgAcc" class="w-full p-2 border rounded-xl mt-1"></div>
         </div>
-        <button onclick="saveSettings()" class="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-xl">Save Changes</button>
+        <button onclick="saveAdminSettings()" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl">Save Settings</button>
       </div>
-
     </main>
   </div>
 
   <script>
-    let adminToken = "";
-    let appData = { orders: [], menu: [], settings: {} };
+    let adminPass = "";
+    let appData = { orders: [], public: {} };
 
     async function loginAdmin() {
       const pass = document.getElementById("passInput").value.trim();
-      const res = await fetch("/api/admin/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: pass })
-      });
-      const data = await res.json();
-      if (res.ok && data.token) {
-        adminToken = data.token;
+      const res = await fetch("/api/data", { headers: { "Authorization": pass } });
+      const json = await res.json();
+      if (res.ok && json.authenticated) {
+        adminPass = pass;
+        appData = json;
         document.getElementById("loginGate").classList.add("hidden");
         document.getElementById("adminApp").classList.remove("hidden");
-        loadData();
+        renderOrders();
+        renderMenuEditor();
+        loadSettingsInputs();
       } else {
-        alert("Invalid Admin Password");
+        alert("Incorrect Administrator Password.");
       }
-    }
-
-    function logout() { location.reload(); }
-
-    async function loadData() {
-      const ordRes = await fetch("/api/admin/orders", { headers: { "Authorization": adminToken } });
-      const ordData = await ordRes.json();
-      appData.orders = ordData.orders || [];
-
-      const bootRes = await fetch("/api/bootstrap");
-      const bootData = await bootRes.json();
-      appData.menu = bootData.menu || [];
-      appData.settings = bootData.settings || {};
-
-      renderOrders();
-      renderMenuEditor();
-
-      document.getElementById("cfgAddr").value = appData.settings.collectionAddress || "";
-      document.getElementById("cfgFee").value = appData.settings.deliveryFee || 30;
-      document.getElementById("cfgBank").value = appData.settings.bankName || "";
-      document.getElementById("cfgAcc").value = appData.settings.accountNumber || "";
     }
 
     function renderOrders() {
       const container = document.getElementById("ordersList");
-      if (!appData.orders.length) return container.innerHTML = `<p class="text-xs text-slate-400">No orders placed yet.</p>`;
+      if (!appData.orders || !appData.orders.length) return (container.innerHTML = "<p class='text-xs text-slate-400'>No orders placed yet.</p>");
 
       container.innerHTML = appData.orders.map(o => `
-        <div class="p-4 bg-white rounded-2xl border border-stone-200 space-y-3 text-xs shadow-sm">
+        <div class="p-4 bg-white rounded-2xl border border-stone-200 space-y-2 text-xs shadow-sm">
           <div class="flex justify-between items-center">
             <strong class="font-mono text-sm text-[#9e7914]">${o.orderNumber}</strong>
-            <span class="px-2.5 py-1 rounded-full font-bold uppercase ${o.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${o.status}</span>
+            <span class="px-2.5 py-0.5 rounded-full font-bold uppercase ${o.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${o.status}</span>
           </div>
-          <div>
-            <strong>${o.customer.name}</strong> (${o.customer.phone}) • ${o.orderType}
-            ${o.deliveryAddress ? `<div class="text-slate-500">Address: ${o.deliveryAddress}</div>` : ''}
-          </div>
-          <div class="border-t pt-2 space-y-1">
-            ${o.items.map(i => `<div class="flex justify-between text-slate-600"><span>${i.quantity}x ${i.name}</span><span>R ${i.lineTotal}</span></div>`).join('')}
+          <div><strong>${o.customer.name}</strong> (${o.customer.phone}) • ${o.orderType} ${o.deliveryAddress ? `• ${o.deliveryAddress}` : ''}</div>
+          <div class="border-t pt-1 space-y-1">
+            ${o.items.map(i => `<div class="flex justify-between text-slate-500"><span>${i.quantity}x ${i.name}</span><span>R ${i.lineTotal}</span></div>`).join('')}
             <div class="flex justify-between font-black text-slate-900 border-t pt-1"><span>Total</span><span>R ${o.total}</span></div>
           </div>
-          ${o.popFileUrl ? `<a href="${o.popFileUrl}" target="_blank" class="inline-block text-[#9e7914] font-bold underline">📄 View Proof of Payment Receipt</a>` : ''}
+          ${o.popBase64 ? `<a href="${o.popBase64}" target="_blank" class="inline-block text-[#9e7914] font-bold underline"><i class="fa-solid fa-receipt"></i> View Proof of Payment Receipt</a>` : '<span class="text-rose-600 block">⚠️ No POP attached yet</span>'}
           <div class="flex gap-2 pt-2">
-            <button onclick="updateStatus('${o.id}', 'PREPARING')" class="px-3 py-1.5 bg-slate-100 rounded-lg font-bold">Preparing</button>
-            <button onclick="updateStatus('${o.id}', 'READY')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold">Mark Ready</button>
-            <button onclick="updateStatus('${o.id}', 'COMPLETED')" class="px-3 py-1.5 bg-slate-900 text-white rounded-lg font-bold">Complete</button>
+            <button onclick="updateStatus('${o.id}', 'PREPARING')" class="px-2.5 py-1 bg-slate-100 rounded-lg font-bold">Preparing</button>
+            <button onclick="updateStatus('${o.id}', 'READY')" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg font-bold">Mark Ready</button>
+            <button onclick="updateStatus('${o.id}', 'COMPLETED')" class="px-2.5 py-1 bg-slate-900 text-white rounded-lg font-bold">Complete</button>
           </div>
         </div>
       `).join('');
     }
 
-    async function updateStatus(id, status) {
-      await fetch(`/api/admin/orders/${id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", "Authorization": adminToken },
-        body: JSON.stringify({ status })
+    async function updateStatus(orderId, status) {
+      await fetch("/api/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": adminPass },
+        body: JSON.stringify({ action: "updateOrderStatus", data: { orderId, status } })
       });
-      loadData();
+      refreshAdminData();
     }
 
     function renderMenuEditor() {
-      const container = document.getElementById("menuEditorList");
-      container.innerHTML = appData.menu.map((m, i) => `
+      const container = document.getElementById("menuItemsEditor");
+      const menu = appData.public?.menu || [];
+      container.innerHTML = menu.map((m, i) => `
         <div class="p-3 bg-white border rounded-xl flex justify-between items-center text-xs">
           <div>
             <strong>${m.name}</strong> (R ${m.price})
             <div class="text-slate-400">${m.description}</div>
           </div>
-          <button onclick="appData.menu.splice(${i},1);saveMenu();" class="text-rose-600 font-bold px-2">Delete</button>
+          <button onclick="appData.public.menu.splice(${i},1);saveAdminMenu();" class="text-rose-600 font-bold px-2">Delete</button>
         </div>
       `).join('');
     }
 
-    async function saveMenu() {
-      await fetch("/api/admin/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": adminToken },
-        body: JSON.stringify({ type: "menu", data: appData.menu })
+    function addNewFoodItem() {
+      const name = prompt("Item Name:");
+      const price = prompt("Price (R):");
+      if (!name || !price) return;
+      if (!appData.public.menu) appData.public.menu = [];
+      appData.public.menu.push({
+        id: "item_" + Date.now(),
+        name,
+        description: "Freshly made to order",
+        price: Number(price),
+        categoryId: "cat_mains",
+        imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600",
+        available: true,
+        featured: false
       });
-      loadData();
+      saveAdminMenu();
     }
 
-    async function saveSettings() {
-      appData.settings.collectionAddress = document.getElementById("cfgAddr").value.trim();
-      appData.settings.deliveryFee = document.getElementById("cfgFee").value.trim();
-      appData.settings.bankName = document.getElementById("cfgBank").value.trim();
-      appData.settings.accountNumber = document.getElementById("cfgAcc").value.trim();
-
-      await fetch("/api/admin/save", {
+    async function saveAdminMenu() {
+      await fetch("/api/data", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": adminToken },
-        body: JSON.stringify({ type: "settings", data: appData.settings })
+        headers: { "Content-Type": "application/json", "Authorization": adminPass },
+        body: JSON.stringify({ action: "adminSaveAll", data: { menu: appData.public.menu } })
+      });
+      renderMenuEditor();
+    }
+
+    function loadSettingsInputs() {
+      const s = appData.public?.settings || {};
+      document.getElementById("cfgAddr").value = s.collectionAddress || "";
+      document.getElementById("cfgFee").value = s.deliveryFee || 30;
+      document.getElementById("cfgBank").value = s.bankName || "";
+      document.getElementById("cfgAcc").value = s.accountNumber || "";
+    }
+
+    async function saveAdminSettings() {
+      const settings = {
+        collectionAddress: document.getElementById("cfgAddr").value.trim(),
+        deliveryFee: document.getElementById("cfgFee").value.trim(),
+        bankName: document.getElementById("cfgBank").value.trim(),
+        accountNumber: document.getElementById("cfgAcc").value.trim()
+      };
+      await fetch("/api/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": adminPass },
+        body: JSON.stringify({ action: "adminSaveAll", data: { settings } })
       });
       alert("Settings updated!");
+    }
+
+    async function refreshAdminData() {
+      const res = await fetch("/api/data", { headers: { "Authorization": adminPass } });
+      appData = await res.json();
+      renderOrders();
     }
 
     function switchTab(t) {
