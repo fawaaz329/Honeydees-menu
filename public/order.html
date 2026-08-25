@@ -20,6 +20,13 @@
       <span class="text-xs font-bold text-[#c59b27]">Honeydees Order Desk</span>
     </div>
 
+    <!-- READY BANNER -->
+    <div id="readyBanner" class="hidden p-4 bg-emerald-50 border-2 border-emerald-500 rounded-2xl text-center space-y-1 animate-pulse">
+      <span class="text-2xl">🎉</span>
+      <h3 class="font-extrabold text-emerald-900 text-sm">YOUR ORDER IS READY!</h3>
+      <p class="text-xs text-emerald-700">Please collect at <strong>14 Viola Street, Lentegeur</strong>.</p>
+    </div>
+
     <div id="trackingContent" class="space-y-4">
       <div class="text-center space-y-1.5">
         <span id="statusPill" class="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider inline-block"></span>
@@ -51,13 +58,14 @@
 
   <script>
     let activeToken = new URLSearchParams(window.location.search).get("track");
+    let currentStatus = "";
 
     async function loadOrder() {
       if (!activeToken) return (document.getElementById("trackingContent").innerHTML = "<p class='text-center text-xs text-slate-400'>No order token provided.</p>");
 
       const res = await fetch(`/api/data?track=${activeToken}`);
       const data = await res.json();
-      if (!res.ok) return alert("Order not found");
+      if (!res.ok) return;
 
       document.getElementById("orderNum").innerText = data.orderNumber;
       document.getElementById("custLine").innerText = `Ordered by ${data.customer.name} (${data.customer.phone})`;
@@ -73,6 +81,15 @@
       const pill = document.getElementById("statusPill");
       pill.innerText = data.status;
       pill.className = `px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-block ${data.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`;
+
+      // Notify customer if status changes to READY
+      if (data.status === 'READY') {
+        document.getElementById("readyBanner").classList.remove("hidden");
+        if (currentStatus !== 'READY' && navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
+      }
+      currentStatus = data.status;
 
       document.getElementById("itemsTbody").innerHTML = data.items.map(i => `
         <div class="flex justify-between py-1">
@@ -106,7 +123,11 @@
       r.readAsDataURL(file);
     }
 
-    window.addEventListener("DOMContentLoaded", loadOrder);
+    window.addEventListener("DOMContentLoaded", () => {
+      loadOrder();
+      // Poll every 12 seconds for real-time status updates
+      setInterval(loadOrder, 12000);
+    });
   </script>
 </body>
 </html>
