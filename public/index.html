@@ -18,10 +18,21 @@
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col justify-between">
 
+  <!-- ACTIVE ORDER BANNER (If user placed an order previously) -->
+  <div id="activeOrderBanner" class="hidden bg-[#c59b27] text-white px-4 py-2.5 text-xs font-bold shadow flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-2">
+      <span class="animate-pulse">📦</span>
+      <span id="activeOrderText">Active Order #HD-000000</span>
+    </div>
+    <a href="/order" id="activeOrderLink" class="bg-slate-900 hover:bg-black text-white px-3 py-1 rounded-lg text-[11px] shadow">
+      View Live Status →
+    </a>
+  </div>
+
   <!-- TOP BAR -->
   <nav class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-200">
     <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
-      <div class="flex items-center gap-3 cursor-pointer" onclick="location.reload()">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="location.href='/'">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c59b27] to-[#9e7914] flex items-center justify-center text-white font-bold text-lg shadow">H</div>
         <div>
           <h1 class="serif text-xl font-bold tracking-tight text-slate-900 leading-tight">Honeydees</h1>
@@ -30,7 +41,7 @@
       </div>
 
       <div class="flex items-center gap-3">
-        <a href="order.html" class="p-2.5 text-slate-600 hover:text-slate-900 text-xs font-bold border rounded-xl bg-white shadow-sm flex items-center gap-1.5">
+        <a href="/order" class="p-2.5 text-slate-600 hover:text-slate-900 text-xs font-bold border rounded-xl bg-white shadow-sm flex items-center gap-1.5">
           <i class="fa-solid fa-magnifying-glass"></i> <span class="hidden sm:inline">Track Order</span>
         </a>
         <button onclick="toggleCart()" class="px-4 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow flex items-center gap-2">
@@ -41,13 +52,14 @@
     </div>
   </nav>
 
-  <!-- BANNER -->
+  <!-- DYNAMIC HERO BANNER -->
   <header class="py-8 px-4 text-center border-b border-stone-200 bg-gradient-to-b from-amber-50/60 to-transparent">
     <div class="max-w-xl mx-auto space-y-2">
-      <h2 class="serif text-3xl font-extrabold text-slate-900">Cape Town's Friday Night Treat</h2>
-      <p class="text-xs text-slate-600">Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.</p>
+      <h2 id="heroHeadingEl" class="serif text-3xl font-extrabold text-slate-900">Cape Town's Friday Night Treat</h2>
+      <p id="heroSubtitleEl" class="text-xs text-slate-600">Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.</p>
       <div class="inline-flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-full text-xs font-bold border border-amber-200 shadow-sm text-slate-700 mt-2">
-        <span class="text-[#c59b27]"><i class="fa-solid fa-clock"></i> Collection:</span> 14 Viola St, Lentegeur (From 6:00 PM)
+        <span class="text-[#c59b27]"><i class="fa-solid fa-clock"></i></span>
+        <span id="scheduleNoticeEl">Collection: 14 Viola St, Lentegeur (From 6:00 PM)</span>
       </div>
     </div>
   </header>
@@ -106,7 +118,6 @@
           <textarea id="custDeliveryAddress" rows="2" placeholder="Street name, suburb and house number" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></textarea>
         </div>
 
-        <!-- BANK DETAILS -->
         <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl space-y-1 text-slate-700">
           <span class="font-bold text-[#9e7914] block text-[11px] uppercase">Bank Transfer (EFT) Instructions</span>
           <div class="flex justify-between"><span>Bank:</span><strong id="eftBank">Standard Bank</strong></div>
@@ -141,11 +152,30 @@
 
     async function init() {
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+      checkActiveOrdersBanner();
+
       const res = await fetch("/api/data");
       const json = await res.json();
       appData = json.public || {};
+
+      // Dynamic Hero Texts
+      const s = appData.settings || {};
+      if (s.heroHeading) document.getElementById("heroHeadingEl").innerText = s.heroHeading;
+      if (s.heroSubtitle) document.getElementById("heroSubtitleEl").innerText = s.heroSubtitle;
+      if (s.scheduleNotice) document.getElementById("scheduleNoticeEl").innerText = s.scheduleNotice;
+
       renderCategories();
       renderMenu();
+    }
+
+    function checkActiveOrdersBanner() {
+      const activeToken = localStorage.getItem("hd_last_token");
+      const activeNum = localStorage.getItem("hd_last_ord_num");
+      if (activeToken && activeNum) {
+        document.getElementById("activeOrderText").innerText = `Active Order #${activeNum}`;
+        document.getElementById("activeOrderLink").href = `/order?track=${activeToken}`;
+        document.getElementById("activeOrderBanner").classList.remove("hidden");
+      }
     }
 
     function renderCategories() {
@@ -166,7 +196,7 @@
       grid.innerHTML = (list || []).map(i => `
         <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm flex flex-col justify-between">
           <div class="h-44 overflow-hidden relative bg-stone-100">
-            <img src="${i.imageUrl}" class="w-full h-full object-cover">
+            <img src="${i.imageUrl}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600'">
             ${i.featured ? '<span class="absolute top-2.5 left-2.5 bg-[#c59b27] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow">Popular</span>' : ''}
           </div>
           <div class="p-4 space-y-2 flex-grow flex flex-col justify-between">
@@ -299,7 +329,11 @@
       });
       const data = await res.json();
       if (res.ok && data.trackingToken) {
-        window.location.href = `order.html?track=${data.trackingToken}`;
+        // Save to localStorage so customer never loses their order
+        localStorage.setItem("hd_last_token", data.trackingToken);
+        localStorage.setItem("hd_last_ord_num", data.orderNumber);
+
+        window.location.href = `/order?track=${data.trackingToken}`;
       } else {
         alert(data.error || "Order failed");
         btn.innerText = "Confirm Order & Receive Tracking Link →"; btn.disabled = false;
