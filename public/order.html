@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Honeydees | Live Order Status</title>
+  <title>Honeydees | Track Order</title>
   <link rel="manifest" href="/manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,10 +17,9 @@
   <div class="max-w-md w-full bg-white rounded-3xl border border-stone-200 shadow-xl p-6 space-y-5">
     <div class="flex justify-between items-center border-b pb-3">
       <a href="/" class="text-xs font-bold text-slate-500 hover:text-slate-900">← Back to Menu</a>
-      <span class="text-xs font-bold text-[#c59b27]">Live Order Tracker</span>
+      <span class="text-xs font-bold text-[#c59b27]">Order Desk</span>
     </div>
 
-    <!-- READY NOTIFICATION BANNER -->
     <div id="readyBanner" class="hidden p-4 bg-emerald-50 border-2 border-emerald-500 rounded-2xl text-center space-y-1 animate-pulse">
       <span class="text-2xl">🎉</span>
       <h3 class="font-extrabold text-emerald-900 text-sm">YOUR ORDER IS READY!</h3>
@@ -37,14 +36,13 @@
       <div class="bg-amber-50 p-3.5 rounded-xl border border-amber-200 text-xs space-y-1 text-slate-700">
         <div class="flex justify-between"><span>Fulfilment:</span><strong id="ordType"></strong></div>
         <div id="addrRow" class="flex justify-between hidden"><span>Delivery Address:</span><strong id="ordAddr"></strong></div>
-        <div class="flex justify-between"><span>Collection Address:</span><strong>14 Viola St, Lentegeur</strong></div>
       </div>
 
       <div class="space-y-1.5 text-xs">
         <h4 class="font-bold text-slate-600 uppercase text-[10px]">Order Summary</h4>
         <div id="itemsTbody" class="border rounded-xl p-3 bg-stone-50 divide-y"></div>
         <div class="flex justify-between text-sm font-extrabold text-slate-900 pt-1">
-          <span>Total Paid / Due:</span><span id="ordTotal"></span>
+          <span>Total Paid:</span><span id="ordTotal"></span>
         </div>
       </div>
 
@@ -62,14 +60,9 @@
 
     async function loadOrder() {
       if (!activeToken) {
-        document.getElementById("trackingContent").innerHTML = `
-          <div class="text-center py-6 space-y-3">
-            <p class="text-xs text-slate-400">No active order found.</p>
-            <a href="/" class="inline-block px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs shadow">Browse Friday Menu</a>
-          </div>`;
+        document.getElementById("trackingContent").innerHTML = `<div class="text-center py-6 space-y-3"><p class="text-xs text-slate-400">No active order found.</p><a href="/" class="inline-block px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs shadow">Browse Menu</a></div>`;
         return;
       }
-
       const res = await fetch(`/api/data?track=${activeToken}`);
       const data = await res.json();
       if (!res.ok) return;
@@ -78,37 +71,20 @@
       document.getElementById("custLine").innerText = `Ordered by ${data.customer.name} (${data.customer.phone})`;
       document.getElementById("ordType").innerText = data.orderType;
 
-      if (data.orderType === "DELIVERY") {
-        document.getElementById("addrRow").classList.remove("hidden");
-        document.getElementById("ordAddr").innerText = data.deliveryAddress;
-      }
+      if (data.orderType === "DELIVERY") { document.getElementById("addrRow").classList.remove("hidden"); document.getElementById("ordAddr").innerText = data.deliveryAddress; }
 
       document.getElementById("ordTotal").innerText = `R ${Number(data.total).toFixed(2)}`;
-
+      
       const pill = document.getElementById("statusPill");
       pill.innerText = data.status;
       pill.className = `px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-block ${data.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`;
 
-      if (data.status === 'READY') {
-        document.getElementById("readyBanner").classList.remove("hidden");
-        if (currentStatus !== 'READY' && navigator.vibrate) {
-          navigator.vibrate([200, 100, 200]);
-        }
-      }
+      if (data.status === 'READY') { document.getElementById("readyBanner").classList.remove("hidden"); if (currentStatus !== 'READY' && navigator.vibrate) navigator.vibrate([200, 100, 200]); }
       currentStatus = data.status;
 
-      document.getElementById("itemsTbody").innerHTML = data.items.map(i => `
-        <div class="flex justify-between py-1">
-          <span>${i.quantity}x ${i.name}</span>
-          <strong class="font-mono">R ${Number(i.lineTotal).toFixed(2)}</strong>
-        </div>
-      `).join('');
+      document.getElementById("itemsTbody").innerHTML = data.items.map(i => `<div class="flex justify-between py-1"><span>${i.quantity}x ${i.name}</span><strong class="font-mono">R ${Number(i.lineTotal).toFixed(2)}</strong></div>`).join('');
     }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      loadOrder();
-      setInterval(loadOrder, 10000);
-    });
+    window.addEventListener("DOMContentLoaded", () => { loadOrder(); setInterval(loadOrder, 10000); });
   </script>
 </body>
 </html>
