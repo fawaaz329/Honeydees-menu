@@ -1,11 +1,12 @@
 /**
  * HONEYDEES BACKEND API (Cloudflare Pages Function)
- * Handles KV Database, Orders, Base64 Photos, Categories, and Dynamic Headings
+ * Full KV Persistence, Strict POP Validation, Category CRUD, and Editable Headings
  */
 
 const SEED_DATA = {
   settings: {
-    businessName: "Honeydees Halal Kitchen",
+    businessName: "Honeydees",
+    halalBadge: "100% Strictly Halal",
     heroHeading: "Cape Town's Friday Night Treat",
     heroSubtitle: "Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.",
     scheduleNotice: "Collection: 14 Viola St, Lentegeur (From 6:00 PM)",
@@ -52,6 +53,9 @@ export async function onRequest(context) {
   const isAdmin = authHeader === adminSecret;
 
   try {
+    // -------------------------------------------------------------
+    // GET: Public Menu, Order Tracking, or Admin Orders
+    // -------------------------------------------------------------
     if (request.method === "GET") {
       const trackToken = url.searchParams.get("track");
 
@@ -82,11 +86,20 @@ export async function onRequest(context) {
       });
     }
 
+    // -------------------------------------------------------------
+    // POST: Create Order, Late Upload, or Admin Updates
+    // -------------------------------------------------------------
     if (request.method === "POST") {
       const body = await request.json();
 
+      // Customer: Create New Order
       if (body.action === "createOrder") {
         const { customer, orderType, deliveryAddress, items, popBase64 } = body.data;
+
+        // STRICT POP ENFORCEMENT
+        if (!popBase64) {
+          return jsonResponse({ error: "Proof of Payment (POP) is strictly required to submit your order." }, 400);
+        }
 
         const menu = await env.HONEYDEES_DB.get("menu", "json") || SEED_DATA.menu;
         const settings = await env.HONEYDEES_DB.get("settings", "json") || SEED_DATA.settings;
@@ -119,8 +132,8 @@ export async function onRequest(context) {
           subtotal,
           deliveryFee,
           total,
-          status: popBase64 ? "PAYMENT PROOF RECEIVED" : "AWAITING EFT PAYMENT",
-          popBase64: popBase64 || null,
+          status: "PAYMENT PROOF RECEIVED",
+          popBase64: popBase64,
           createdAt: new Date().toLocaleDateString("en-GB") + " " + new Date().toLocaleTimeString("en-GB")
         };
 
@@ -134,8 +147,11 @@ export async function onRequest(context) {
         return jsonResponse({ success: true, trackingToken, orderNumber, total });
       }
 
+      // Customer: Late POP Upload
       if (body.action === "uploadLatePOP") {
         const { trackingToken, popBase64 } = body.data;
+        if (!popBase64) return jsonResponse({ error: "No proof file attached" }, 400);
+
         const orderId = await env.HONEYDEES_DB.get(`track:${trackingToken}`);
         if (!orderId) return jsonResponse({ error: "Order not found" }, 404);
 
@@ -146,7 +162,7 @@ export async function onRequest(context) {
         return jsonResponse({ success: true });
       }
 
-      // ADMIN PROTECTED ACTIONS
+      // ADMIN ACTIONS
       if (!isAdmin) {
         return jsonResponse({ error: "Unauthorized access" }, 401);
       }
@@ -185,4 +201,4 @@ function jsonResponse(data, status = 200) {
       "Access-Control-Allow-Headers": "Content-Type, Authorization"
     }
   });
-}
+    }
