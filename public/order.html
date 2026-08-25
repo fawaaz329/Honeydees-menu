@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Honeydees | Track Order</title>
+  <title>Honeydees | Live Order Status</title>
   <link rel="manifest" href="/manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,11 +16,11 @@
 
   <div class="max-w-md w-full bg-white rounded-3xl border border-stone-200 shadow-xl p-6 space-y-5">
     <div class="flex justify-between items-center border-b pb-3">
-      <a href="index.html" class="text-xs font-bold text-slate-500">← Back to Menu</a>
-      <span class="text-xs font-bold text-[#c59b27]">Honeydees Order Desk</span>
+      <a href="/" class="text-xs font-bold text-slate-500 hover:text-slate-900">← Back to Menu</a>
+      <span class="text-xs font-bold text-[#c59b27]">Live Order Tracker</span>
     </div>
 
-    <!-- READY BANNER -->
+    <!-- READY NOTIFICATION BANNER -->
     <div id="readyBanner" class="hidden p-4 bg-emerald-50 border-2 border-emerald-500 rounded-2xl text-center space-y-1 animate-pulse">
       <span class="text-2xl">🎉</span>
       <h3 class="font-extrabold text-emerald-900 text-sm">YOUR ORDER IS READY!</h3>
@@ -34,34 +34,41 @@
         <p id="custLine" class="text-xs text-slate-500"></p>
       </div>
 
-      <div class="bg-amber-50 p-3.5 rounded-xl border border-amber-200 text-xs space-y-1">
+      <div class="bg-amber-50 p-3.5 rounded-xl border border-amber-200 text-xs space-y-1 text-slate-700">
         <div class="flex justify-between"><span>Fulfilment:</span><strong id="ordType"></strong></div>
-        <div id="addrRow" class="flex justify-between hidden"><span>Address:</span><strong id="ordAddr"></strong></div>
+        <div id="addrRow" class="flex justify-between hidden"><span>Delivery Address:</span><strong id="ordAddr"></strong></div>
         <div class="flex justify-between"><span>Collection Address:</span><strong>14 Viola St, Lentegeur</strong></div>
       </div>
 
       <div class="space-y-1.5 text-xs">
-        <h4 class="font-bold text-slate-600 uppercase text-[10px]">Items Summary</h4>
+        <h4 class="font-bold text-slate-600 uppercase text-[10px]">Order Summary</h4>
         <div id="itemsTbody" class="border rounded-xl p-3 bg-stone-50 divide-y"></div>
         <div class="flex justify-between text-sm font-extrabold text-slate-900 pt-1">
-          <span>Total:</span><span id="ordTotal"></span>
+          <span>Total Paid / Due:</span><span id="ordTotal"></span>
         </div>
       </div>
 
-      <div id="latePopBox" class="p-3.5 bg-stone-50 border rounded-xl space-y-2 text-xs">
-        <strong class="text-amber-800 block"><i class="fa-solid fa-receipt mr-1"></i> Attach Proof of Payment</strong>
-        <input type="file" id="latePopFile" accept="image/*,application/pdf" class="w-full p-2 bg-white border rounded-lg">
-        <button onclick="uploadLatePop()" id="latePopBtn" class="w-full py-2 bg-[#c59b27] text-white font-bold rounded-lg shadow">Upload POP Receipt</button>
+      <div class="text-center pt-2">
+        <span class="text-[11px] text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 font-bold">
+          <i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> Proof of Payment Received
+        </span>
       </div>
     </div>
   </div>
 
   <script>
-    let activeToken = new URLSearchParams(window.location.search).get("track");
+    let activeToken = new URLSearchParams(window.location.search).get("track") || localStorage.getItem("hd_active_token");
     let currentStatus = "";
 
     async function loadOrder() {
-      if (!activeToken) return (document.getElementById("trackingContent").innerHTML = "<p class='text-center text-xs text-slate-400'>No order token provided.</p>");
+      if (!activeToken) {
+        document.getElementById("trackingContent").innerHTML = `
+          <div class="text-center py-6 space-y-3">
+            <p class="text-xs text-slate-400">No active order found.</p>
+            <a href="/" class="inline-block px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs shadow">Browse Friday Menu</a>
+          </div>`;
+        return;
+      }
 
       const res = await fetch(`/api/data?track=${activeToken}`);
       const data = await res.json();
@@ -82,7 +89,6 @@
       pill.innerText = data.status;
       pill.className = `px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-block ${data.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`;
 
-      // Notify customer if status changes to READY
       if (data.status === 'READY') {
         document.getElementById("readyBanner").classList.remove("hidden");
         if (currentStatus !== 'READY' && navigator.vibrate) {
@@ -94,39 +100,14 @@
       document.getElementById("itemsTbody").innerHTML = data.items.map(i => `
         <div class="flex justify-between py-1">
           <span>${i.quantity}x ${i.name}</span>
-          <strong class="font-mono">R ${i.lineTotal}</strong>
+          <strong class="font-mono">R ${Number(i.lineTotal).toFixed(2)}</strong>
         </div>
       `).join('');
-
-      document.getElementById("latePopBox").style.display = data.popBase64 ? 'none' : 'block';
-    }
-
-    async function uploadLatePop() {
-      const file = document.getElementById("latePopFile").files[0];
-      if (!file) return alert("Please select a receipt image or PDF.");
-
-      const btn = document.getElementById("latePopBtn");
-      btn.innerText = "Uploading..."; btn.disabled = true;
-
-      const r = new FileReader();
-      r.onload = async () => {
-        const res = await fetch("/api/data", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "uploadLatePOP", data: { trackingToken: activeToken, popBase64: r.result } })
-        });
-        if (res.ok) {
-          alert("Proof of payment attached successfully!");
-          loadOrder();
-        }
-      };
-      r.readAsDataURL(file);
     }
 
     window.addEventListener("DOMContentLoaded", () => {
       loadOrder();
-      // Poll every 12 seconds for real-time status updates
-      setInterval(loadOrder, 12000);
+      setInterval(loadOrder, 10000);
     });
   </script>
 </body>
