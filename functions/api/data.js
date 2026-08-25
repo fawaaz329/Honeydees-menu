@@ -1,11 +1,14 @@
 /**
  * HONEYDEES BACKEND API (Cloudflare Pages Function)
- * Handles KV Database Storage, Server-Side Order Calculations & Password Auth
+ * Handles KV Database, Orders, Base64 Photos, Categories, and Dynamic Headings
  */
 
 const SEED_DATA = {
   settings: {
     businessName: "Honeydees Halal Kitchen",
+    heroHeading: "Cape Town's Friday Night Treat",
+    heroSubtitle: "Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.",
+    scheduleNotice: "Collection: 14 Viola St, Lentegeur (From 6:00 PM)",
     collectionAddress: "14 Viola Street, Lentegeur, Mitchells Plain",
     collectionTimes: "Fridays from 6:00 PM – 9:30 PM",
     deliveryFee: 30.00,
@@ -21,7 +24,7 @@ const SEED_DATA = {
     { id: "cat_desserts", name: "Desserts & Treats" }
   ],
   menu: [
-    { id: "item_1", name: "Masala Steak Sandwich", description: "Masala steak cutlets, crispy slap chips & fresh salad.", price: 65, categoryId: "cat_mains", imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80", available: true, featured: true },
+    { id: "item_1", name: "Masala Steak Sandwich", description: "Masala steak cutlets, slap chips & fresh salad.", price: 65, categoryId: "cat_mains", imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80", available: true, featured: true },
     { id: "item_2", name: "Full House Steak Sandwich", description: "Masala steak, fried egg, cheese, chips & salad.", price: 85, categoryId: "cat_mains", imageUrl: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80", available: true, featured: true },
     { id: "item_3", name: "Saucy Chicken Wrap", description: "Saucy chicken wrap with crispy chips & fresh salads.", price: 65, categoryId: "cat_wraps", imageUrl: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=600&auto=format&fit=crop&q=80", available: true, featured: false },
     { id: "item_4", name: "Watermelon & Passion Fruit Mocktail", description: "Fresh watermelon juice, passion fruit & sparkling soda.", price: 20, categoryId: "cat_mocktails", imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80", available: true, featured: true },
@@ -33,7 +36,6 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
 
-  // CORS Preflight
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -50,13 +52,9 @@ export async function onRequest(context) {
   const isAdmin = authHeader === adminSecret;
 
   try {
-    // -------------------------------------------------------------
-    // GET: Public Menu OR Tracking OR Admin Dashboard Orders
-    // -------------------------------------------------------------
     if (request.method === "GET") {
       const trackToken = url.searchParams.get("track");
 
-      // 1. Order Tracking
       if (trackToken) {
         const orderId = await env.HONEYDEES_DB.get(`track:${trackToken}`);
         if (!orderId) return jsonResponse({ error: "Order not found" }, 404);
@@ -64,7 +62,6 @@ export async function onRequest(context) {
         return jsonResponse(order);
       }
 
-      // 2. Public Data Bootstrap
       let settings = await env.HONEYDEES_DB.get("settings", "json") || SEED_DATA.settings;
       let categories = await env.HONEYDEES_DB.get("categories", "json") || SEED_DATA.categories;
       let menu = await env.HONEYDEES_DB.get("menu", "json") || SEED_DATA.menu;
@@ -85,13 +82,9 @@ export async function onRequest(context) {
       });
     }
 
-    // -------------------------------------------------------------
-    // POST: Orders, Uploads & Admin Updates
-    // -------------------------------------------------------------
     if (request.method === "POST") {
       const body = await request.json();
 
-      // Customer: Create New Order
       if (body.action === "createOrder") {
         const { customer, orderType, deliveryAddress, items, popBase64 } = body.data;
 
@@ -131,7 +124,6 @@ export async function onRequest(context) {
           createdAt: new Date().toLocaleDateString("en-GB") + " " + new Date().toLocaleTimeString("en-GB")
         };
 
-        // Save order and tracking pointer in KV
         await env.HONEYDEES_DB.put(`order:${newOrder.id}`, JSON.stringify(newOrder));
         await env.HONEYDEES_DB.put(`track:${trackingToken}`, newOrder.id);
 
@@ -142,7 +134,6 @@ export async function onRequest(context) {
         return jsonResponse({ success: true, trackingToken, orderNumber, total });
       }
 
-      // Customer: Late Proof of Payment Upload
       if (body.action === "uploadLatePOP") {
         const { trackingToken, popBase64 } = body.data;
         const orderId = await env.HONEYDEES_DB.get(`track:${trackingToken}`);
@@ -155,7 +146,7 @@ export async function onRequest(context) {
         return jsonResponse({ success: true });
       }
 
-      // ADMIN ACTIONS (Require Password)
+      // ADMIN PROTECTED ACTIONS
       if (!isAdmin) {
         return jsonResponse({ error: "Unauthorized access" }, 401);
       }
@@ -194,4 +185,4 @@ function jsonResponse(data, status = 200) {
       "Access-Control-Allow-Headers": "Content-Type, Authorization"
     }
   });
-      }
+}
