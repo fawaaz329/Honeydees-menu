@@ -29,7 +29,6 @@
     </a>
   </div>
 
-  <!-- TOP BAR -->
   <nav class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-200">
     <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
       <div class="flex items-center gap-3 cursor-pointer" onclick="location.href='/'">
@@ -39,23 +38,14 @@
           <span class="text-[10px] font-bold tracking-widest text-[#9e7914] uppercase bg-amber-50 px-2 py-0.5 rounded border border-amber-200" id="navHalalBadge">100% Strictly Halal</span>
         </div>
       </div>
-
       <div class="flex items-center gap-2 sm:gap-3">
-        <a href="/order" class="p-2.5 text-slate-600 hover:text-slate-900 text-xs font-bold border rounded-xl bg-white shadow-sm flex items-center gap-1.5">
-          <i class="fa-solid fa-magnifying-glass"></i> <span class="hidden sm:inline">Track Order</span>
-        </a>
-        <a href="/admin" class="p-2.5 text-slate-400 hover:text-slate-700 text-xs border rounded-xl bg-white shadow-sm" title="Admin">
-          <i class="fa-solid fa-gear"></i>
-        </a>
-        <button onclick="toggleCart()" class="px-4 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow flex items-center gap-2">
-          <i class="fa-solid fa-bag-shopping text-[#c59b27]"></i>
-          <span id="cartBadge" class="bg-[#c59b27] text-white px-2 py-0.5 rounded-full text-[10px] font-black">0</span>
-        </button>
+        <a href="/order" class="p-2.5 text-slate-600 hover:text-slate-900 text-xs font-bold border rounded-xl bg-white shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> <span class="hidden sm:inline">Track Order</span></a>
+        <a href="/admin" class="p-2.5 text-slate-400 hover:text-slate-700 text-xs border rounded-xl bg-white shadow-sm" title="Admin"><i class="fa-solid fa-gear"></i></a>
+        <button onclick="toggleCart()" class="px-4 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow flex items-center gap-2"><i class="fa-solid fa-bag-shopping text-[#c59b27]"></i><span id="cartBadge" class="bg-[#c59b27] text-white px-2 py-0.5 rounded-full text-[10px] font-black">0</span></button>
       </div>
     </div>
   </nav>
 
-  <!-- DYNAMIC HERO BANNER -->
   <header class="py-8 px-4 text-center border-b border-stone-200 bg-gradient-to-b from-amber-50/60 to-transparent">
     <div class="max-w-xl mx-auto space-y-2">
       <h2 id="heroHeadingEl" class="serif text-3xl font-extrabold text-slate-900">Cape Town's Friday Night Treat</h2>
@@ -67,13 +57,11 @@
     </div>
   </header>
 
-  <!-- SIDEWAYS SCROLLING CATEGORY TABS & FOOD GRID -->
   <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
-    <div id="categoryTabs" class="flex gap-2 overflow-x-auto pb-3"></div>
+    <div id="categoryTabs" class="flex gap-2 overflow-x-auto pb-3 scrollbar-hide"></div>
     <div id="menuGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4"></div>
   </main>
 
-  <!-- SLIDE CART DRAWER -->
   <div id="cartBackdrop" onclick="toggleCart()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden"></div>
   <aside id="cartDrawer" class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white z-50 shadow-2xl flex flex-col transform translate-x-full transition duration-300 ease-in-out">
     <div class="p-4 border-b flex justify-between items-center bg-stone-50">
@@ -82,33 +70,21 @@
     </div>
     <div id="cartItemsList" class="p-4 flex-grow overflow-y-auto space-y-3"></div>
     <div class="p-4 border-t bg-stone-50 space-y-3">
-      <div class="flex justify-between items-center text-sm font-bold text-slate-600">
-        <span>Subtotal:</span>
-        <span id="cartSubtotal" class="text-slate-900 text-base">R 0.00</span>
-      </div>
-      <button onclick="openCheckoutModal()" id="checkoutBtn" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl shadow hover:bg-black transition">
-        Proceed to Payment →
-      </button>
+      <div class="flex justify-between items-center text-sm font-bold text-slate-600"><span>Subtotal:</span><span id="cartSubtotal" class="text-slate-900 text-base">R 0.00</span></div>
+      <button onclick="openCheckoutModal()" id="checkoutBtn" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl shadow hover:bg-black transition">Proceed to Payment →</button>
     </div>
   </aside>
 
-  <!-- CHECKOUT MODAL (STRICT POP ENFORCED) -->
   <div id="checkoutModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
     <div class="bg-white max-w-lg w-full rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="serif text-xl font-bold text-slate-900">EFT Payment & Fulfilment</h3>
+        <h3 class="serif text-xl font-bold text-slate-900">EFT Payment</h3>
         <button onclick="closeCheckoutModal()" class="text-xl font-bold text-slate-400">×</button>
       </div>
 
       <form onsubmit="submitOrder(event)" class="space-y-3 text-xs">
-        <div>
-          <label class="font-bold text-slate-700 block mb-1">Your Full Name *</label>
-          <input type="text" id="custName" required placeholder="e.g. Fatima Davids" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs">
-        </div>
-        <div>
-          <label class="font-bold text-slate-700 block mb-1">WhatsApp / Mobile Number *</label>
-          <input type="tel" id="custPhone" required placeholder="e.g. 083 989 7938" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs">
-        </div>
+        <div><label class="font-bold text-slate-700 block mb-1">Your Full Name *</label><input type="text" id="custName" required class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
+        <div><label class="font-bold text-slate-700 block mb-1">WhatsApp Number *</label><input type="tel" id="custPhone" required class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
         <div>
           <label class="font-bold text-slate-700 block mb-1">Fulfilment Type *</label>
           <select id="custOrderType" onchange="toggleDeliveryFields()" class="w-full p-2.5 border rounded-xl bg-white text-xs font-bold">
@@ -116,43 +92,28 @@
             <option value="DELIVERY">Cape Town Local Delivery (+R30 Fee)</option>
           </select>
         </div>
-        <div id="deliveryBox" class="hidden">
-          <label class="font-bold text-slate-700 block mb-1">Full Delivery Address *</label>
-          <textarea id="custDeliveryAddress" rows="2" placeholder="Street name, suburb and house number" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></textarea>
-        </div>
+        <div id="deliveryBox" class="hidden"><label class="font-bold text-slate-700 block mb-1">Full Delivery Address *</label><textarea id="custDeliveryAddress" rows="2" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></textarea></div>
 
-        <!-- BANK DETAILS -->
         <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl space-y-1 text-slate-700">
           <span class="font-bold text-[#9e7914] block text-[11px] uppercase">Bank Transfer (EFT) Instructions</span>
           <div class="flex justify-between"><span>Bank:</span><strong id="eftBank">Standard Bank</strong></div>
-          <div class="flex justify-between"><span>Account Holder:</span><strong id="eftHolder">Honeydees Food Enterprise</strong></div>
+          <div class="flex justify-between"><span>Account Holder:</span><strong id="eftHolder">Honeydees Food</strong></div>
           <div class="flex justify-between"><span>Account Number:</span><strong id="eftAcc" class="font-mono">10192837465</strong></div>
-          <div class="flex justify-between"><span>Branch Code:</span><strong id="eftBranch" class="font-mono">051001</strong></div>
-          <div class="flex justify-between border-t border-amber-200 pt-1.5 font-bold text-sm text-slate-900">
-            <span>Total Payable:</span><span id="finalTotalPayable" class="text-[#9e7914]">R 0.00</span>
-          </div>
+          <div class="flex justify-between border-t border-amber-200 pt-1.5 font-bold text-sm text-slate-900"><span>Total Payable:</span><span id="finalTotalPayable" class="text-[#9e7914]">R 0.00</span></div>
         </div>
 
-        <!-- MANDATORY POP FILE UPLOAD -->
         <div class="p-3 bg-rose-50 border-2 border-rose-200 rounded-xl space-y-1.5">
-          <label class="font-bold text-rose-900 block text-xs">
-            <i class="fa-solid fa-receipt mr-1 text-rose-600"></i>
-            Upload Proof of Payment (POP) * (Mandatory)
-          </label>
+          <label class="font-bold text-rose-900 block text-xs"><i class="fa-solid fa-receipt mr-1 text-rose-600"></i>Upload Proof of Payment (POP) *</label>
           <input type="file" id="popFile" required accept="image/*,application/pdf" class="w-full p-2 bg-white border border-rose-300 rounded-xl text-xs">
-          <span class="text-[10px] text-rose-700 block">Orders are only confirmed once receipt is attached.</span>
+          <span class="text-[10px] text-rose-700 block font-bold">Orders cannot be placed without a receipt.</span>
         </div>
 
-        <button type="submit" id="placeOrderBtn" class="w-full py-3.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl shadow text-xs transition">
-          Confirm Order & Receive Live Tracking Link →
-        </button>
+        <button type="submit" id="placeOrderBtn" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl shadow text-xs">Confirm Order & Get Tracking Link →</button>
       </form>
     </div>
   </div>
 
-  <footer class="border-t border-stone-200 bg-white py-4 text-center text-[11px] text-slate-500">
-    <p>© 2026 Honeydees Halal Kitchen • Cape Town</p>
-  </footer>
+  <footer class="border-t border-stone-200 bg-white py-4 text-center text-[11px] text-slate-500"><p>© 2026 Honeydees Halal Kitchen</p></footer>
 
   <script>
     let appData = { menu: [], categories: [], settings: {} };
@@ -162,11 +123,9 @@
     async function init() {
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
       checkActiveOrdersBanner();
-
       const res = await fetch("/api/data");
-      const json = await res.json();
-      appData = json.public || {};
-
+      appData = (await res.json()).public || {};
+      
       const s = appData.settings || {};
       if (s.businessName) document.getElementById("navBrandName").innerText = s.businessName;
       if (s.halalBadge) document.getElementById("navHalalBadge").innerText = s.halalBadge;
@@ -176,10 +135,8 @@
       if (s.bankName) document.getElementById("eftBank").innerText = s.bankName;
       if (s.accountHolder) document.getElementById("eftHolder").innerText = s.accountHolder;
       if (s.accountNumber) document.getElementById("eftAcc").innerText = s.accountNumber;
-      if (s.branchCode) document.getElementById("eftBranch").innerText = s.branchCode;
 
-      renderCategories();
-      renderMenu();
+      renderCategories(); renderMenu();
     }
 
     function checkActiveOrdersBanner() {
@@ -195,11 +152,7 @@
     function renderCategories() {
       const container = document.getElementById("categoryTabs");
       const cats = [{ id: "ALL", name: "✨ All Specials" }, ...(appData.categories || [])];
-      container.innerHTML = cats.map(c => `
-        <button onclick="setCategory('${c.id}')" class="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${activeCategory === c.id ? 'bg-slate-900 text-white shadow' : 'bg-white border border-stone-200 text-slate-700'}">
-          ${c.name}
-        </button>
-      `).join('');
+      container.innerHTML = cats.map(c => `<button onclick="setCategory('${c.id}')" class="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${activeCategory === c.id ? 'bg-slate-900 text-white shadow' : 'bg-white border border-stone-200 text-slate-700'}">${c.name}</button>`).join('');
     }
 
     function setCategory(id) { activeCategory = id; renderCategories(); renderMenu(); }
@@ -207,161 +160,77 @@
     function renderMenu() {
       const grid = document.getElementById("menuGrid");
       const list = activeCategory === "ALL" ? appData.menu : (appData.menu || []).filter(i => i.categoryId === activeCategory);
-      
-      if (!list || !list.length) {
-        grid.innerHTML = `<div class="col-span-full text-center py-10 text-xs text-slate-400">No items available under this category.</div>`;
-        return;
-      }
-
+      if (!list || !list.length) { grid.innerHTML = `<div class="col-span-full text-center py-10 text-xs text-slate-400">No items available.</div>`; return; }
       grid.innerHTML = list.map(i => `
-        <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition">
+        <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm flex flex-col justify-between">
           <div class="h-44 overflow-hidden relative bg-stone-100">
-            <img src="${i.imageUrl}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600'">
-            ${i.featured ? '<span class="absolute top-2.5 left-2.5 bg-[#c59b27] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow">Popular</span>' : ''}
+            <img src="${i.imageUrl}" class="w-full h-full object-cover">
           </div>
           <div class="p-4 space-y-2 flex-grow flex flex-col justify-between">
-            <div>
-              <h4 class="font-bold text-slate-900 text-sm">${i.name}</h4>
-              <p class="text-xs text-slate-500 line-clamp-2 mt-0.5">${i.description}</p>
-            </div>
+            <div><h4 class="font-bold text-slate-900 text-sm">${i.name}</h4><p class="text-xs text-slate-500 line-clamp-2 mt-0.5">${i.description}</p></div>
             <div class="flex justify-between items-center pt-2 border-t border-stone-100">
               <span class="text-base font-black text-slate-900">R ${Number(i.price).toFixed(2)}</span>
-              <button onclick="addToCart('${i.id}')" class="px-3.5 py-1.5 bg-amber-50 hover:bg-[#c59b27] text-[#9e7914] hover:text-white border border-amber-200 rounded-xl font-bold text-xs transition">
-                + Add
-              </button>
+              <button onclick="addToCart('${i.id}')" class="px-3.5 py-1.5 bg-amber-50 hover:bg-[#c59b27] text-[#9e7914] hover:text-white border border-amber-200 rounded-xl font-bold text-xs transition">+ Add</button>
             </div>
           </div>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
 
     function addToCart(id) {
       const item = appData.menu.find(i => i.id === id);
       const ex = cart.find(c => c.id === id);
-      if (ex) ex.quantity++;
-      else cart.push({ ...item, quantity: 1 });
-      updateCart();
-      toggleCart(true);
+      if (ex) ex.quantity++; else cart.push({ ...item, quantity: 1 });
+      updateCart(); toggleCart(true);
     }
 
     function updateCart() {
-      const totalCount = cart.reduce((s, i) => s + i.quantity, 0);
       const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
-      document.getElementById("cartBadge").innerText = totalCount;
+      document.getElementById("cartBadge").innerText = cart.reduce((s, i) => s + i.quantity, 0);
       document.getElementById("cartSubtotal").innerText = `R ${subtotal.toFixed(2)}`;
-
       const list = document.getElementById("cartItemsList");
-      if (!cart.length) {
-        list.innerHTML = `<p class="text-xs text-slate-400 text-center py-10">Cart is empty.</p>`;
-        return;
-      }
+      if (!cart.length) return (list.innerHTML = `<p class="text-xs text-slate-400 text-center py-10">Cart is empty.</p>`);
       list.innerHTML = cart.map(i => `
-        <div class="flex justify-between items-center p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs">
-          <div>
-            <strong class="text-slate-900 block">${i.name}</strong>
-            <span class="text-slate-500">R ${Number(i.price).toFixed(2)} each</span>
-          </div>
-          <div class="flex items-center gap-2 bg-white px-2 py-1 border rounded-lg">
-            <button onclick="changeQty('${i.id}', -1)" class="font-bold px-1 text-slate-500">-</button>
-            <span class="font-bold font-mono">${i.quantity}</span>
-            <button onclick="changeQty('${i.id}', 1)" class="font-bold px-1 text-slate-500">+</button>
-          </div>
-        </div>
-      `).join('');
+        <div class="flex justify-between items-center p-3 bg-stone-50 rounded-xl border text-xs">
+          <div><strong class="text-slate-900 block">${i.name}</strong><span class="text-slate-500">R ${i.price} each</span></div>
+          <div class="flex gap-2 bg-white px-2 py-1 border rounded-lg"><button onclick="changeQty('${i.id}', -1)" class="font-bold text-slate-500">-</button><span class="font-bold">${i.quantity}</span><button onclick="changeQty('${i.id}', 1)" class="font-bold text-slate-500">+</button></div>
+        </div>`).join('');
     }
-
-    function changeQty(id, delta) {
-      const ex = cart.find(c => c.id === id);
-      if (!ex) return;
-      ex.quantity += delta;
-      cart = cart.filter(c => c.quantity > 0);
-      updateCart();
-    }
+    function changeQty(id, delta) { cart.find(c => c.id === id).quantity += delta; cart = cart.filter(c => c.quantity > 0); updateCart(); }
 
     function toggleCart(forceOpen) {
-      const drawer = document.getElementById("cartDrawer");
-      const backdrop = document.getElementById("cartBackdrop");
-      if (forceOpen || drawer.classList.contains("translate-x-full")) {
-        drawer.classList.remove("translate-x-full");
-        backdrop.classList.remove("hidden");
-      } else {
-        drawer.classList.add("translate-x-full");
-        backdrop.classList.add("hidden");
-      }
+      const drawer = document.getElementById("cartDrawer"), backdrop = document.getElementById("cartBackdrop");
+      if (forceOpen || drawer.classList.contains("translate-x-full")) { drawer.classList.remove("translate-x-full"); backdrop.classList.remove("hidden"); } else { drawer.classList.add("translate-x-full"); backdrop.classList.add("hidden"); }
     }
 
     function openCheckoutModal() {
-      if (!cart.length) return;
-      toggleCart(false);
-      const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+      if (!cart.length) return; toggleCart(false);
       const isDel = document.getElementById("custOrderType").value === "DELIVERY";
-      const total = subtotal + (isDel ? (Number(appData.settings?.deliveryFee) || 30) : 0);
+      const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0) + (isDel ? (Number(appData.settings?.deliveryFee) || 30) : 0);
       document.getElementById("finalTotalPayable").innerText = `R ${total.toFixed(2)}`;
-      document.getElementById("checkoutModal").classList.remove("hidden");
-      document.getElementById("checkoutModal").classList.add("flex");
+      document.getElementById("checkoutModal").classList.remove("hidden"); document.getElementById("checkoutModal").classList.add("flex");
     }
-
-    function closeCheckoutModal() {
-      document.getElementById("checkoutModal").classList.add("hidden");
-      document.getElementById("checkoutModal").classList.remove("flex");
-    }
-
-    function toggleDeliveryFields() {
-      const isDel = document.getElementById("custOrderType").value === "DELIVERY";
-      document.getElementById("deliveryBox").classList.toggle("hidden", !isDel);
-      openCheckoutModal();
-    }
+    function closeCheckoutModal() { document.getElementById("checkoutModal").classList.add("hidden"); document.getElementById("checkoutModal").classList.remove("flex"); }
+    function toggleDeliveryFields() { document.getElementById("deliveryBox").classList.toggle("hidden", document.getElementById("custOrderType").value === "DELIVERY"); openCheckoutModal(); }
 
     async function submitOrder(e) {
       e.preventDefault();
       const file = document.getElementById("popFile").files[0];
-      if (!file) {
-        alert("Please attach your Proof of Payment receipt to confirm your order.");
-        return;
-      }
+      if (!file) return alert("Proof of Payment receipt is strictly required.");
 
-      const btn = document.getElementById("placeOrderBtn");
-      btn.innerText = "Verifying & Placing Order..."; btn.disabled = true;
+      const btn = document.getElementById("placeOrderBtn"); btn.innerText = "Placing Order..."; btn.disabled = true;
 
-      const base64Pop = await new Promise(resolve => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result);
-        r.readAsDataURL(file);
+      const base64Pop = await new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result); r.readAsDataURL(file); });
+
+      const res = await fetch("/api/data", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "createOrder", data: { customer: { name: document.getElementById("custName").value.trim(), phone: document.getElementById("custPhone").value.trim() }, orderType: document.getElementById("custOrderType").value, deliveryAddress: document.getElementById("custDeliveryAddress").value.trim(), items: cart, popBase64: base64Pop } })
       });
-
-      const payload = {
-        action: "createOrder",
-        data: {
-          customer: {
-            name: document.getElementById("custName").value.trim(),
-            phone: document.getElementById("custPhone").value.trim()
-          },
-          orderType: document.getElementById("custOrderType").value,
-          deliveryAddress: document.getElementById("custDeliveryAddress").value.trim(),
-          items: cart,
-          popBase64: base64Pop
-        }
-      };
-
-      try {
-        const res = await fetch("/api/data", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (res.ok && data.trackingToken) {
-          localStorage.setItem("hd_active_token", data.trackingToken);
-          localStorage.setItem("hd_active_num", data.orderNumber);
-          window.location.href = `/order?track=${data.trackingToken}`;
-        } else {
-          alert(data.error || "Order failed.");
-          btn.innerText = "Confirm Order & Receive Live Tracking Link →"; btn.disabled = false;
-        }
-      } catch (err) {
-        alert("Network error: " + err.message);
-        btn.innerText = "Confirm Order & Receive Live Tracking Link →"; btn.disabled = false;
-      }
+      const data = await res.json();
+      if (res.ok && data.trackingToken) {
+        localStorage.setItem("hd_active_token", data.trackingToken);
+        localStorage.setItem("hd_active_num", data.orderNumber);
+        window.location.href = `/order?track=${data.trackingToken}`;
+      } else { alert("Failed"); btn.innerText = "Confirm Order"; btn.disabled = false; }
     }
 
     window.addEventListener("DOMContentLoaded", init);
