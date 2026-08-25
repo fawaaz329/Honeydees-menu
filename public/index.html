@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Honeydees | Friday Night Halal Menu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    :root { --gold-brand: #c59b27; --gold-dark: #9e7914; --ivory: #faf8f5; }
+    body { background-color: var(--ivory); font-family: 'Plus Jakarta Sans', sans-serif; }
+    .serif { font-family: 'Playfair Display', serif; }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col justify-between">
+
+  <!-- NAVBAR -->
+  <nav class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-200">
+    <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="location.reload()">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c59b27] to-[#9e7914] flex items-center justify-center text-white font-bold text-lg shadow-sm">H</div>
+        <div>
+          <h1 class="serif text-xl font-bold tracking-tight text-slate-900 leading-tight">Honeydees</h1>
+          <span class="text-[10px] font-bold tracking-widest text-[#9e7914] uppercase bg-amber-50 px-2 py-0.5 rounded border border-amber-200">100% Strictly Halal</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="order.html" class="p-2.5 text-slate-600 hover:text-slate-900 text-sm font-bold flex items-center gap-1.5 border border-stone-200 rounded-xl bg-white shadow-sm">
+          <i class="fa-solid fa-magnifying-glass"></i> <span class="hidden sm:inline">Track Order</span>
+        </a>
+        <button onclick="toggleCart()" class="px-4 py-2.5 bg-slate-900 hover:bg-black text-white font-bold text-sm rounded-xl shadow-sm flex items-center gap-2">
+          <i class="fa-solid fa-bag-shopping text-[#c59b27]"></i>
+          <span id="cartBadge" class="bg-[#c59b27] text-white px-2 py-0.5 rounded-full text-xs font-black">0</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO BANNER -->
+  <header class="py-10 px-4 text-center border-b border-stone-200 bg-gradient-to-b from-amber-50/50 to-transparent">
+    <div class="max-w-xl mx-auto space-y-3">
+      <h2 class="serif text-3xl sm:text-4xl font-extrabold text-slate-900">Cape Town's Friday Night Treats</h2>
+      <p class="text-sm text-slate-600">Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted artisan mocktails.</p>
+      <div class="inline-flex items-center gap-2 bg-white px-4 py-1.5 rounded-full text-xs font-bold border border-amber-200 shadow-sm text-slate-700">
+        <span class="text-[#c59b27]"><i class="fa-solid fa-clock"></i> Friday Collection:</span> 14 Viola St, Lentegeur (From 6:00 PM)
+      </div>
+    </div>
+  </header>
+
+  <!-- CATEGORY SCROLLER & FOOD GRID -->
+  <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full">
+    <div id="categoryTabs" class="flex gap-2 overflow-x-auto pb-4 scrollbar-none"></div>
+    <div id="menuGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"></div>
+  </main>
+
+  <!-- SLIDE-OVER CART DRAWER -->
+  <div id="cartBackdrop" onclick="toggleCart()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden"></div>
+  <aside id="cartDrawer" class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white z-50 shadow-2xl flex flex-col transform translate-x-full transition duration-300 ease-in-out">
+    <div class="p-4 border-b flex justify-between items-center bg-stone-50">
+      <h3 class="font-bold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-bag-shopping text-[#c59b27]"></i> Your Friday Order</h3>
+      <button onclick="toggleCart()" class="text-slate-400 hover:text-slate-700 text-xl font-bold p-1">×</button>
+    </div>
+    
+    <div id="cartItemsList" class="p-4 flex-grow overflow-y-auto space-y-3"></div>
+
+    <div class="p-4 border-t bg-stone-50 space-y-3">
+      <div class="flex justify-between items-center text-sm font-bold text-slate-600">
+        <span>Subtotal:</span>
+        <span id="cartSubtotal" class="text-slate-900 text-base">R 0.00</span>
+      </div>
+      <button onclick="openCheckoutModal()" id="checkoutBtn" class="w-full py-3.5 bg-gradient-to-r from-[#c59b27] to-[#9e7914] text-white font-extrabold rounded-xl shadow hover:opacity-95 transition">
+        Proceed to EFT Payment →
+      </button>
+    </div>
+  </aside>
+
+  <!-- CHECKOUT MODAL -->
+  <div id="checkoutModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white max-w-lg w-full rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="serif text-xl font-bold text-slate-900">Checkout & Payment</h3>
+        <button onclick="closeCheckoutModal()" class="text-xl font-bold text-slate-400 hover:text-slate-700">×</button>
+      </div>
+
+      <form onsubmit="submitOrder(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Your Full Name *</label>
+          <input type="text" id="custName" required placeholder="Fatima Davids" class="w-full p-3 border rounded-xl bg-slate-50 text-sm">
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">WhatsApp Mobile Number *</label>
+          <input type="tel" id="custPhone" required placeholder="083 989 7938" class="w-full p-3 border rounded-xl bg-slate-50 text-sm">
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Fulfilment Type *</label>
+          <select id="custOrderType" onchange="toggleDeliveryFields()" class="w-full p-3 border rounded-xl bg-white text-sm font-bold">
+            <option value="COLLECTION">Collection (14 Viola St, Lentegeur - 6 PM)</option>
+            <option value="DELIVERY">Cape Town Local Delivery (+R30 Fee)</option>
+          </select>
+        </div>
+        <div id="deliveryBox" class="hidden">
+          <label class="font-bold text-slate-700 block mb-1">Delivery Address *</label>
+          <textarea id="custDeliveryAddress" rows="2" placeholder="Street name, suburb and unit number" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></textarea>
+        </div>
+
+        <!-- BANKING CARD -->
+        <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-1.5 text-slate-700">
+          <span class="font-bold text-[#9e7914] block text-xs uppercase tracking-wider">Direct EFT Payment Details</span>
+          <div class="flex justify-between"><span>Bank:</span><strong id="eftBank">Standard Bank</strong></div>
+          <div class="flex justify-between"><span>Account Holder:</span><strong id="eftHolder">Honeydees Food</strong></div>
+          <div class="flex justify-between"><span>Account Number:</span><strong id="eftAcc" class="font-mono">10192837465</strong></div>
+          <div class="flex justify-between"><span>Branch Code:</span><strong id="eftBranch" class="font-mono">051001</strong></div>
+          <div class="flex justify-between border-t border-amber-200 pt-2 font-bold text-sm text-slate-900">
+            <span>Total Payable:</span><span id="finalTotalPayable" class="text-[#9e7914]">R 0.00</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Upload Proof of Payment (POP) (Optional now)</label>
+          <input type="file" id="popFile" accept="image/*,application/pdf" class="w-full p-2 border rounded-xl bg-slate-50">
+        </div>
+
+        <button type="submit" id="placeOrderBtn" class="w-full py-3.5 bg-slate-900 hover:bg-black text-white font-extrabold rounded-xl shadow text-sm">
+          Place Order & Receive Live Tracking Link
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="border-t border-stone-200 bg-white py-6 text-center text-xs text-slate-500">
+    <p>© 2026 Honeydees Halal Kitchen. Cape Town, South Africa.</p>
+  </footer>
+
+  <script>
+    let appData = { menu: [], categories: [], settings: {} };
+    let cart = [];
+    let activeCategory = "ALL";
+
+    async function init() {
+      const res = await fetch("/api/bootstrap");
+      appData = await res.json();
+      renderCategories();
+      renderMenu();
+    }
+
+    function renderCategories() {
+      const container = document.getElementById("categoryTabs");
+      const cats = [{ id: "ALL", name: "✨ All Menu" }, ...appData.categories];
+      container.innerHTML = cats.map(c => `
+        <button onclick="setCategory('${c.id}')" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition ${activeCategory === c.id ? 'bg-slate-900 text-white' : 'bg-white border border-stone-200 text-slate-700'}">
+          ${c.name}
+        </button>
+      `).join('');
+    }
+
+    function setCategory(id) { activeCategory = id; renderCategories(); renderMenu(); }
+
+    function renderMenu() {
+      const grid = document.getElementById("menuGrid");
+      const list = activeCategory === "ALL" ? appData.menu : appData.menu.filter(i => i.categoryId === activeCategory);
+      grid.innerHTML = list.map(i => `
+        <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition">
+          <div class="h-48 overflow-hidden relative bg-stone-100">
+            <img src="${i.imageUrl}" class="w-full h-full object-cover">
+            ${i.featured ? '<span class="absolute top-3 left-3 bg-[#c59b27] text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow">Popular</span>' : ''}
+          </div>
+          <div class="p-4 space-y-2 flex-grow flex flex-col justify-between">
+            <div>
+              <h4 class="font-bold text-slate-900">${i.name}</h4>
+              <p class="text-xs text-slate-500 line-clamp-2 mt-0.5">${i.description}</p>
+            </div>
+            <div class="flex justify-between items-center pt-3 border-t border-stone-100">
+              <span class="text-lg font-black text-slate-900">R ${i.price.toFixed(2)}</span>
+              <button onclick="addToCart('${i.id}')" class="px-3.5 py-2 bg-amber-50 hover:bg-[#c59b27] text-[#9e7914] hover:text-white border border-amber-200 rounded-xl font-bold text-xs transition">
+                + Add
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addToCart(id) {
+      const item = appData.menu.find(i => i.id === id);
+      const ex = cart.find(c => c.id === id);
+      if (ex) ex.quantity++;
+      else cart.push({ ...item, quantity: 1 });
+      updateCart();
+      toggleCart(true);
+    }
+
+    function updateCart() {
+      const totalCount = cart.reduce((s, i) => s + i.quantity, 0);
+      const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+      document.getElementById("cartBadge").innerText = totalCount;
+      document.getElementById("cartSubtotal").innerText = `R ${subtotal.toFixed(2)}`;
+
+      const list = document.getElementById("cartItemsList");
+      if (!cart.length) {
+        list.innerHTML = `<p class="text-xs text-slate-400 text-center py-10">Your cart is empty.</p>`;
+        return;
+      }
+      list.innerHTML = cart.map(i => `
+        <div class="flex justify-between items-center p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs">
+          <div>
+            <strong class="text-slate-900 block">${i.name}</strong>
+            <span class="text-slate-500">R ${i.price} each</span>
+          </div>
+          <div class="flex items-center gap-2 bg-white px-2 py-1 border rounded-lg">
+            <button onclick="changeQty('${i.id}', -1)" class="font-bold px-1 text-slate-500">-</button>
+            <span class="font-bold font-mono">${i.quantity}</span>
+            <button onclick="changeQty('${i.id}', 1)" class="font-bold px-1 text-slate-500">+</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function changeQty(id, delta) {
+      const ex = cart.find(c => c.id === id);
+      if (!ex) return;
+      ex.quantity += delta;
+      cart = cart.filter(c => c.quantity > 0);
+      updateCart();
+    }
+
+    function toggleCart(forceOpen) {
+      const drawer = document.getElementById("cartDrawer");
+      const backdrop = document.getElementById("cartBackdrop");
+      if (forceOpen || drawer.classList.contains("translate-x-full")) {
+        drawer.classList.remove("translate-x-full");
+        backdrop.classList.remove("hidden");
+      } else {
+        drawer.classList.add("translate-x-full");
+        backdrop.classList.add("hidden");
+      }
+    }
+
+    function openCheckoutModal() {
+      if (!cart.length) return;
+      toggleCart(false);
+      const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+      const isDel = document.getElementById("custOrderType").value === "DELIVERY";
+      const total = subtotal + (isDel ? (Number(appData.settings.deliveryFee) || 30) : 0);
+      document.getElementById("finalTotalPayable").innerText = `R ${total.toFixed(2)}`;
+      document.getElementById("checkoutModal").classList.remove("hidden");
+      document.getElementById("checkoutModal").classList.add("flex");
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById("checkoutModal").classList.add("hidden");
+      document.getElementById("checkoutModal").classList.remove("flex");
+    }
+
+    function toggleDeliveryFields() {
+      const isDel = document.getElementById("custOrderType").value === "DELIVERY";
+      document.getElementById("deliveryBox").classList.toggle("hidden", !isDel);
+      const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+      const total = subtotal + (isDel ? (Number(appData.settings.deliveryFee) || 30) : 0);
+      document.getElementById("finalTotalPayable").innerText = `R ${total.toFixed(2)}`;
+    }
+
+    async function submitOrder(e) {
+      e.preventDefault();
+      const btn = document.getElementById("placeOrderBtn");
+      btn.innerText = "Submitting Order..."; btn.disabled = true;
+
+      let popUrl = null;
+      const file = document.getElementById("popFile").files[0];
+      if (file) {
+        const fd = new FormData(); fd.append("file", file);
+        const up = await fetch("/api/upload", { method: "POST", body: fd });
+        const upJson = await up.json();
+        popUrl = upJson.url;
+      }
+
+      const payload = {
+        customer: {
+          name: document.getElementById("custName").value.trim(),
+          phone: document.getElementById("custPhone").value.trim()
+        },
+        orderType: document.getElementById("custOrderType").value,
+        deliveryAddress: document.getElementById("custDeliveryAddress").value.trim(),
+        items: cart,
+        popFileUrl: popUrl
+      };
+
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.trackingToken) {
+        window.location.href = `order.html?track=${data.trackingToken}`;
+      } else {
+        alert(data.error || "Order submission failed");
+        btn.innerText = "Place Order & Receive Live Tracking Link"; btn.disabled = false;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
