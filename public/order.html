@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Honeydees | Live Order Status</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>body { background-color: #faf8f5; font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+</head>
+<body class="p-4 sm:p-8 flex justify-center items-center min-h-screen">
+
+  <div class="max-w-lg w-full bg-white rounded-3xl border border-stone-200 shadow-xl p-6 sm:p-8 space-y-6">
+    <div class="flex justify-between items-center border-b pb-4">
+      <a href="index.html" class="text-xs font-bold text-slate-500 hover:text-slate-900">← Back to Menu</a>
+      <span class="text-xs font-bold text-[#c59b27]">Honeydees Tracker</span>
+    </div>
+
+    <!-- TOKEN SEARCH IF DIRECT HIT -->
+    <div id="tokenSearchBox" class="space-y-3">
+      <h2 class="text-lg font-bold text-slate-900">Look up your order</h2>
+      <div class="flex gap-2">
+        <input type="text" id="manualToken" placeholder="Paste tracking token or ID" class="p-3 border rounded-xl text-xs flex-grow bg-slate-50">
+        <button onclick="fetchOrder(document.getElementById('manualToken').value.trim())" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold">Track</button>
+      </div>
+    </div>
+
+    <!-- TRACKING CONTENT -->
+    <div id="trackingResult" class="hidden space-y-6">
+      <div class="text-center space-y-2">
+        <span id="statusPill" class="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider inline-block"></span>
+        <h3 id="orderNum" class="text-2xl font-black text-slate-900 font-mono"></h3>
+        <p id="custLine" class="text-xs text-slate-500"></p>
+      </div>
+
+      <div class="bg-amber-50/60 p-4 rounded-2xl border border-amber-200 text-xs space-y-1 text-slate-700">
+        <div class="flex justify-between"><span>Fulfilment:</span><strong id="ordType"></strong></div>
+        <div id="addrRow" class="flex justify-between hidden"><span>Address:</span><strong id="ordAddr"></strong></div>
+        <div class="flex justify-between"><span>Collection Venue:</span><strong>14 Viola St, Lentegeur</strong></div>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="font-bold text-xs text-slate-600 uppercase tracking-wider">Ordered Items</h4>
+        <div id="itemsTbody" class="divide-y text-xs border rounded-xl p-3 bg-stone-50"></div>
+        <div class="flex justify-between text-base font-extrabold text-slate-900 pt-2 px-1">
+          <span>Total Paid / Due:</span><span id="ordTotal"></span>
+        </div>
+      </div>
+
+      <!-- LATE POP UPLOAD -->
+      <div id="latePopBox" class="p-4 bg-stone-50 border rounded-2xl space-y-2 text-xs">
+        <strong class="text-amber-800 block"><i class="fa-solid fa-receipt mr-1"></i> Attach Proof of Payment</strong>
+        <input type="file" id="latePopFile" class="w-full p-2 bg-white border rounded-lg">
+        <button onclick="uploadLatePop()" class="w-full py-2.5 bg-[#c59b27] hover:bg-[#9e7914] text-white font-bold rounded-xl shadow">Upload POP File</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeToken = "";
+
+    async function fetchOrder(token) {
+      if (!token) return;
+      activeToken = token;
+      const res = await fetch(`/api/orders/track/${token}`);
+      const data = await res.json();
+      if (!res.ok) return alert("Order not found");
+
+      document.getElementById("tokenSearchBox").classList.add("hidden");
+      document.getElementById("trackingResult").classList.remove("hidden");
+
+      document.getElementById("orderNum").innerText = data.orderNumber;
+      document.getElementById("custLine").innerText = `Order Placed by ${data.customer.name} (${data.customer.phone})`;
+      document.getElementById("ordType").innerText = data.orderType;
+
+      if (data.orderType === "DELIVERY") {
+        document.getElementById("addrRow").classList.remove("hidden");
+        document.getElementById("ordAddr").innerText = data.deliveryAddress;
+      }
+
+      document.getElementById("ordTotal").innerText = `R ${Number(data.total).toFixed(2)}`;
+
+      const pill = document.getElementById("statusPill");
+      pill.innerText = data.status.replace(/_/g, " ");
+      pill.className = `px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider inline-block ${data.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`;
+
+      document.getElementById("itemsTbody").innerHTML = data.items.map(i => `
+        <div class="flex justify-between py-1.5">
+          <span>${i.quantity}x ${i.name}</span>
+          <strong class="font-mono">R ${Number(i.lineTotal).toFixed(2)}</strong>
+        </div>
+      `).join('');
+
+      document.getElementById("latePopBox").style.display = data.popFileUrl ? 'none' : 'block';
+    }
+
+    async function uploadLatePop() {
+      const file = document.getElementById("latePopFile").files[0];
+      if (!file) return alert("Select a file first");
+      const fd = new FormData(); fd.append("file", file);
+      const up = await fetch("/api/upload", { method: "POST", body: fd });
+      const upJson = await up.json();
+      if (upJson.url) {
+        alert("Proof of payment submitted for review!");
+        fetchOrder(activeToken);
+      }
+    }
+
+    const t = new URLSearchParams(window.location.search).get("track");
+    if (t) fetchOrder(t);
+  </script>
+</body>
+  </html>
