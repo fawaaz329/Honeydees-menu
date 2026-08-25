@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Honeydees | Admin Portal</title>
+  <title>Honeydees | Staff Admin Portal</title>
   <link rel="manifest" href="/manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +14,7 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between text-slate-800">
 
-  <!-- NOTIFICATION BANNER -->
+  <!-- LIVE ORDER CHIME ALERT -->
   <div id="newOrderAlert" class="hidden sticky top-0 z-50 bg-emerald-600 text-white p-3 text-center text-xs font-bold shadow-lg animate-bounce">
     🔔 NEW ORDER RECEIVED! Refreshing dashboard...
   </div>
@@ -23,7 +23,7 @@
   <div id="loginGate" class="my-auto py-16">
     <div class="max-w-sm mx-auto bg-white p-8 rounded-3xl border border-stone-200 shadow-xl text-center space-y-4">
       <div class="w-12 h-12 bg-[#c59b27] text-white rounded-2xl mx-auto flex items-center justify-center font-bold text-xl">H</div>
-      <h2 class="text-xl font-bold text-slate-900">Honeydees Administration</h2>
+      <h2 class="text-xl font-bold text-slate-900">Staff Administration</h2>
       <p class="text-xs text-slate-500">Enter Cloudflare Administrator Password.</p>
       
       <input type="password" id="passInput" placeholder="Enter password" class="w-full p-3 border rounded-xl text-xs bg-slate-50 outline-none" onkeydown="if(event.key==='Enter') loginAdmin()">
@@ -43,7 +43,7 @@
         </span>
         <div class="flex items-center gap-2">
           <span class="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Live Listen
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Live
           </span>
           <button onclick="location.reload()" class="px-3 py-1 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold">Logout</button>
         </div>
@@ -52,43 +52,102 @@
 
     <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full space-y-5">
       <div class="flex gap-2 border-b pb-2">
-        <button onclick="switchTab('tabOrders')" class="px-4 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold">📦 Orders Queue</button>
-        <button onclick="switchTab('tabMenu')" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700">🍽️ Menu Items</button>
-        <button onclick="switchTab('tabSettings')" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700">⚙️ Settings</button>
+        <button onclick="switchTab('tabOrders')" id="btnTabOrders" class="px-4 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold">📦 Orders Queue</button>
+        <button onclick="switchTab('tabMenu')" id="btnTabMenu" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700">🍽️ Menu Items</button>
+        <button onclick="switchTab('tabSettings')" id="btnTabSettings" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700">⚙️ Settings</button>
       </div>
 
-      <!-- ORDERS TAB -->
+      <!-- TAB 1: ORDERS QUEUE -->
       <div id="tabOrders" class="space-y-3">
         <div id="ordersList" class="space-y-3"></div>
       </div>
 
-      <!-- MENU TAB -->
-      <div id="tabMenu" class="hidden space-y-3">
+      <!-- TAB 2: MENU & CATEGORY MANAGER -->
+      <div id="tabMenu" class="hidden space-y-4">
         <div class="flex justify-between items-center">
-          <h3 class="font-bold text-slate-900 text-sm">Menu Management</h3>
-          <button onclick="addNewFoodItem()" class="px-3.5 py-1.5 bg-[#c59b27] text-white rounded-xl text-xs font-bold">+ Add Item</button>
+          <h3 class="font-bold text-slate-900 text-sm">Friday Night Food Items</h3>
+          <button onclick="openAddItemModal()" class="px-3.5 py-1.5 bg-[#c59b27] text-white rounded-xl text-xs font-bold shadow">+ Add Food Item</button>
         </div>
-        <div id="menuItemsEditor" class="space-y-3"></div>
+        <div id="menuGroupedList" class="space-y-6"></div>
       </div>
 
-      <!-- SETTINGS TAB -->
-      <div id="tabSettings" class="hidden bg-white p-5 rounded-2xl border border-stone-200 space-y-3 text-xs">
-        <h3 class="font-bold text-sm text-slate-900">EFT Banking & Delivery Parameters</h3>
+      <!-- TAB 3: SETTINGS -->
+      <div id="tabSettings" class="hidden bg-white p-5 rounded-2xl border border-stone-200 space-y-4 text-xs">
+        <h3 class="font-bold text-sm text-slate-900 border-b pb-2">Main Page Branding & Schedule</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700">Main Hero Heading</label>
+            <input type="text" id="cfgHeroHeading" class="w-full p-2.5 border rounded-xl mt-1 bg-slate-50 font-bold">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700">Hero Subtitle</label>
+            <input type="text" id="cfgHeroSubtitle" class="w-full p-2.5 border rounded-xl mt-1 bg-slate-50">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="font-bold text-slate-700">Collection Schedule & Venue Text (Banner)</label>
+            <input type="text" id="cfgScheduleNotice" class="w-full p-2.5 border rounded-xl mt-1 bg-slate-50">
+          </div>
+        </div>
+
+        <h3 class="font-bold text-sm text-slate-900 border-b pb-2 pt-2">EFT Banking & Delivery</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div><label class="font-bold">Collection Venue</label><input type="text" id="cfgAddr" class="w-full p-2 border rounded-xl mt-1"></div>
           <div><label class="font-bold">Delivery Fee (R)</label><input type="number" id="cfgFee" class="w-full p-2 border rounded-xl mt-1"></div>
           <div><label class="font-bold">Bank Name</label><input type="text" id="cfgBank" class="w-full p-2 border rounded-xl mt-1"></div>
           <div><label class="font-bold">Account Number</label><input type="text" id="cfgAcc" class="w-full p-2 border rounded-xl mt-1"></div>
         </div>
-        <button onclick="saveAdminSettings()" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl">Save Settings</button>
+        <button onclick="saveAdminSettings()" class="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-xl shadow">Save All Settings</button>
       </div>
     </main>
+  </div>
+
+  <!-- ADD / EDIT MENU ITEM MODAL -->
+  <div id="itemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white max-w-md w-full rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto text-xs">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-bold text-slate-900 text-sm" id="itemModalTitle">Add New Food Item</h3>
+        <button onclick="closeItemModal()" class="text-xl font-bold text-slate-400">×</button>
+      </div>
+
+      <form onsubmit="saveItemFromModal(event)" class="space-y-3">
+        <div>
+          <label class="font-bold block mb-1">Item Name *</label>
+          <input type="text" id="mItemName" required placeholder="e.g. Gourmet Gatsby" class="w-full p-2 border rounded-xl">
+        </div>
+        <div>
+          <label class="font-bold block mb-1">Category / Heading *</label>
+          <select id="mItemCatSelect" class="w-full p-2 border rounded-xl bg-white font-bold mb-1"></select>
+          <input type="text" id="mItemNewCat" placeholder="Or type a new category heading..." class="w-full p-1.5 border rounded-lg text-[11px] bg-slate-50">
+        </div>
+        <div>
+          <label class="font-bold block mb-1">Price (R) *</label>
+          <input type="number" id="mItemPrice" required placeholder="65" class="w-full p-2 border rounded-xl">
+        </div>
+        <div>
+          <label class="font-bold block mb-1">Description</label>
+          <textarea id="mItemDesc" rows="2" placeholder="Ingredients & toppings..." class="w-full p-2 border rounded-xl"></textarea>
+        </div>
+        <div>
+          <label class="font-bold block mb-1">Upload Photo (Max 10MB)</label>
+          <input type="file" id="mItemPhoto" accept="image/*" class="w-full p-1.5 border rounded-xl bg-slate-50">
+          <div id="photoPreviewBox" class="mt-2 hidden">
+            <img id="photoPreviewImg" src="" class="h-24 w-auto rounded-lg border object-cover">
+          </div>
+        </div>
+        <div class="flex items-center gap-2 pt-1">
+          <input type="checkbox" id="mItemFeatured">
+          <label for="mItemFeatured" class="font-bold">Mark as Featured / Popular</label>
+        </div>
+        <button type="submit" id="saveItemBtn" class="w-full py-2.5 bg-[#c59b27] text-white font-bold rounded-xl shadow">Save to Menu</button>
+      </form>
+    </div>
   </div>
 
   <script>
     let adminPass = "";
     let appData = { orders: [], public: {} };
     let previousOrderCount = 0;
+    let editingItemId = null;
 
     function formatSAPhone(phone) {
       if (!phone) return "";
@@ -109,10 +168,9 @@
         document.getElementById("loginGate").classList.add("hidden");
         document.getElementById("adminApp").classList.remove("hidden");
         renderOrders();
-        renderMenuEditor();
+        renderGroupedMenu();
         loadSettingsInputs();
 
-        // Start Auto-Polling for New Orders every 15 seconds
         setInterval(autoCheckNewOrders, 15000);
       } else {
         alert("Incorrect Administrator Password.");
@@ -125,7 +183,6 @@
       const json = await res.json();
       if (res.ok && json.orders) {
         if (json.orders.length > previousOrderCount) {
-          // Play Audio Beep & Show Notification Banner
           playOrderChime();
           const banner = document.getElementById("newOrderAlert");
           banner.classList.remove("hidden");
@@ -145,8 +202,8 @@
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.type = "sine";
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
         gain.gain.setValueAtTime(0.3, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
         osc.start();
@@ -175,7 +232,6 @@
           </div>
           ${o.popBase64 ? `<a href="${o.popBase64}" target="_blank" class="inline-block text-[#9e7914] font-bold underline"><i class="fa-solid fa-receipt"></i> View Proof of Payment Receipt</a>` : '<span class="text-rose-600 block">⚠️ No POP attached yet</span>'}
           
-          <!-- STATUS ACTIONS & WHATSAPP READY ALERT -->
           <div class="flex flex-wrap gap-2 pt-2 items-center">
             <button onclick="updateStatus('${o.id}', 'PREPARING')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">Preparing</button>
             <button onclick="updateStatus('${o.id}', 'READY')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow">Mark Ready</button>
@@ -198,49 +254,125 @@
       refreshAdminData();
     }
 
-    function renderMenuEditor() {
-      const container = document.getElementById("menuItemsEditor");
+    function renderGroupedMenu() {
+      const container = document.getElementById("menuGroupedList");
+      const cats = appData.public?.categories || [];
       const menu = appData.public?.menu || [];
-      container.innerHTML = menu.map((m, i) => `
-        <div class="p-3 bg-white border rounded-xl flex justify-between items-center text-xs">
-          <div>
-            <strong>${m.name}</strong> (R ${m.price})
-            <div class="text-slate-400">${m.description}</div>
-          </div>
-          <button onclick="appData.public.menu.splice(${i},1);saveAdminMenu();" class="text-rose-600 font-bold px-2">Delete</button>
-        </div>
-      `).join('');
+
+      if (!menu.length) return (container.innerHTML = "<p class='text-xs text-slate-400'>No items in menu.</p>");
+
+      container.innerHTML = cats.map(c => {
+        const items = menu.filter(i => i.categoryId === c.id);
+        return `
+          <div class="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h4 class="font-extrabold text-[#9e7914] text-xs uppercase tracking-wider">${c.name} (${items.length})</h4>
+            </div>
+            <div class="space-y-2">
+              ${items.length ? items.map(m => `
+                <div class="flex justify-between items-center p-2 bg-stone-50 rounded-xl border text-xs">
+                  <div class="flex items-center gap-3">
+                    <img src="${m.imageUrl}" class="w-12 h-12 rounded-lg object-cover border" onerror="this.src='https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600'">
+                    <div>
+                      <strong class="block text-slate-900">${m.name}</strong>
+                      <span class="text-slate-500">R ${m.price}</span>
+                    </div>
+                  </div>
+                  <button onclick="deleteMenuItem('${m.id}')" class="text-rose-600 font-bold px-2 py-1 hover:bg-rose-50 rounded">Delete</button>
+                </div>
+              `).join('') : '<p class="text-[11px] text-slate-400">No items under this heading.</p>'}
+            </div>
+          </div>`;
+      }).join('');
     }
 
-    function addNewFoodItem() {
-      const name = prompt("Item Name:");
-      const price = prompt("Price (R):");
-      if (!name || !price) return;
+    function openAddItemModal() {
+      editingItemId = null;
+      document.getElementById("itemModalTitle").innerText = "Add New Food Item";
+      document.getElementById("mItemName").value = "";
+      document.getElementById("mItemPrice").value = "";
+      document.getElementById("mItemDesc").value = "";
+      document.getElementById("mItemPhoto").value = "";
+      document.getElementById("mItemNewCat").value = "";
+      document.getElementById("photoPreviewBox").classList.add("hidden");
+
+      const sel = document.getElementById("mItemCatSelect");
+      const cats = appData.public?.categories || [];
+      sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+      document.getElementById("itemModal").classList.remove("hidden");
+      document.getElementById("itemModal").classList.add("flex");
+    }
+
+    function closeItemModal() {
+      document.getElementById("itemModal").classList.add("hidden");
+      document.getElementById("itemModal").classList.remove("flex");
+    }
+
+    async function saveItemFromModal(e) {
+      e.preventDefault();
+      const btn = document.getElementById("saveItemBtn");
+      btn.innerText = "Saving Item..."; btn.disabled = true;
+
+      let catId = document.getElementById("mItemCatSelect").value;
+      const newCatName = document.getElementById("mItemNewCat").value.trim();
+
+      if (newCatName) {
+        catId = "cat_" + Date.now();
+        if (!appData.public.categories) appData.public.categories = [];
+        appData.public.categories.push({ id: catId, name: newCatName });
+      }
+
+      let imgUrl = "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600";
+      const photoFile = document.getElementById("mItemPhoto").files[0];
+
+      if (photoFile) {
+        imgUrl = await new Promise(resolve => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result);
+          r.readAsDataURL(photoFile);
+        });
+      }
+
       if (!appData.public.menu) appData.public.menu = [];
       appData.public.menu.push({
         id: "item_" + Date.now(),
-        name,
-        description: "Freshly made to order",
-        price: Number(price),
-        categoryId: "cat_mains",
-        imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600",
-        available: true,
-        featured: false
+        name: document.getElementById("mItemName").value.trim(),
+        price: Number(document.getElementById("mItemPrice").value),
+        description: document.getElementById("mItemDesc").value.trim(),
+        categoryId: catId,
+        imageUrl: imgUrl,
+        featured: document.getElementById("mItemFeatured").checked,
+        available: true
       });
-      saveAdminMenu();
+
+      await fetch("/api/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": adminPass },
+        body: JSON.stringify({ action: "adminSaveAll", data: { menu: appData.public.menu, categories: appData.public.categories } })
+      });
+
+      btn.innerText = "Save to Menu"; btn.disabled = false;
+      closeItemModal();
+      renderGroupedMenu();
     }
 
-    async function saveAdminMenu() {
+    async function deleteMenuItem(id) {
+      if (!confirm("Delete this food item?")) return;
+      appData.public.menu = (appData.public.menu || []).filter(i => i.id !== id);
       await fetch("/api/data", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": adminPass },
         body: JSON.stringify({ action: "adminSaveAll", data: { menu: appData.public.menu } })
       });
-      renderMenuEditor();
+      renderGroupedMenu();
     }
 
     function loadSettingsInputs() {
       const s = appData.public?.settings || {};
+      document.getElementById("cfgHeroHeading").value = s.heroHeading || "Cape Town's Friday Night Treat";
+      document.getElementById("cfgHeroSubtitle").value = s.heroSubtitle || "Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.";
+      document.getElementById("cfgScheduleNotice").value = s.scheduleNotice || "Collection: 14 Viola St, Lentegeur (From 6:00 PM)";
       document.getElementById("cfgAddr").value = s.collectionAddress || "";
       document.getElementById("cfgFee").value = s.deliveryFee || 30;
       document.getElementById("cfgBank").value = s.bankName || "";
@@ -249,29 +381,4 @@
 
     async function saveAdminSettings() {
       const settings = {
-        collectionAddress: document.getElementById("cfgAddr").value.trim(),
-        deliveryFee: document.getElementById("cfgFee").value.trim(),
-        bankName: document.getElementById("cfgBank").value.trim(),
-        accountNumber: document.getElementById("cfgAcc").value.trim()
-      };
-      await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": adminPass },
-        body: JSON.stringify({ action: "adminSaveAll", data: { settings } })
-      });
-      alert("Settings updated!");
-    }
-
-    async function refreshAdminData() {
-      const res = await fetch("/api/data", { headers: { "Authorization": adminPass } });
-      appData = await res.json();
-      renderOrders();
-    }
-
-    function switchTab(t) {
-      ["tabOrders", "tabMenu", "tabSettings"].forEach(id => document.getElementById(id).classList.add("hidden"));
-      document.getElementById(t).classList.remove("hidden");
-    }
-  </script>
-</body>
-</html>
+        heroHeading: document.getElementById("cfgHeroHeadin
