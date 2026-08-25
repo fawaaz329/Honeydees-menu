@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Honeydees | Staff Admin Portal</title>
+  <title>Honeydees | Admin</title>
   <link rel="manifest" href="/manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,108 +14,61 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between text-slate-800">
 
-  <!-- LIVE ORDER CHIME ALERT -->
-  <div id="newOrderAlert" class="hidden sticky top-0 z-50 bg-emerald-600 text-white p-3 text-center text-xs font-bold shadow-lg animate-bounce">
-    🔔 NEW ORDER RECEIVED! Refreshing dashboard...
-  </div>
+  <div id="newOrderAlert" class="hidden sticky top-0 z-50 bg-emerald-600 text-white p-3 text-center text-xs font-bold shadow-lg animate-bounce">🔔 NEW ORDER RECEIVED!</div>
 
-  <!-- 1. LOGIN GATE -->
   <div id="loginGate" class="my-auto py-16">
-    <div class="max-w-sm mx-auto bg-white p-8 rounded-3xl border border-stone-200 shadow-xl text-center space-y-4">
+    <div class="max-w-sm mx-auto bg-white p-8 rounded-3xl border shadow-xl text-center space-y-4">
       <div class="w-12 h-12 bg-[#c59b27] text-white rounded-2xl mx-auto flex items-center justify-center font-bold text-xl">H</div>
-      <h2 class="text-xl font-bold text-slate-900">Staff Administration</h2>
-      <p class="text-xs text-slate-500">Enter Cloudflare Administrator Password.</p>
-      
+      <h2 class="text-xl font-bold">Staff Admin</h2>
       <input type="password" id="passInput" placeholder="Enter password" class="w-full p-3 border rounded-xl text-xs bg-slate-50 outline-none" onkeydown="if(event.key==='Enter') loginAdmin()">
-      <button onclick="loginAdmin()" id="loginBtn" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl text-xs shadow">
-        Unlock Portal →
-      </button>
+      <button onclick="loginAdmin()" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl text-xs shadow">Unlock Portal →</button>
     </div>
   </div>
 
-  <!-- 2. AUTHENTICATED CONSOLE -->
   <div id="adminApp" class="hidden flex-grow flex flex-col">
-    <nav class="bg-white border-b border-stone-200 sticky top-0 z-40">
+    <nav class="bg-white border-b sticky top-0 z-40">
       <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-        <a href="/" class="font-bold text-sm text-slate-900 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-lg bg-[#c59b27] text-white font-bold flex items-center justify-center text-xs">H</span>
-          Honeydees Admin
-        </a>
-        <div class="flex items-center gap-2">
-          <span class="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Live
-          </span>
-          <button onclick="location.reload()" class="px-3 py-1 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold">Logout</button>
-        </div>
+        <a href="/" class="font-bold text-sm flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-[#c59b27] text-white font-bold flex items-center justify-center text-xs">H</span> Admin</a>
+        <div class="flex gap-2"><span class="text-[11px] text-emerald-600 font-bold flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Live</span><button onclick="location.reload()" class="px-3 py-1 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold">Logout</button></div>
       </div>
     </nav>
 
     <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full space-y-5">
-      <div class="flex gap-2 border-b pb-2">
-        <button onclick="switchTab('tabOrders')" id="btnTabOrders" class="px-4 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold">📦 Orders Queue</button>
-        <button onclick="switchTab('tabMenu')" id="btnTabMenu" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700">🍽️ Menu Items</button>
-        <button onclick="switchTab('tabCategories')" id="btnTabCategories" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700">🏷️ Categories</button>
-        <button onclick="switchTab('tabSettings')" id="btnTabSettings" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700">⚙️ Main Page Headings & Settings</button>
+      <div class="flex gap-2 border-b pb-2 overflow-x-auto">
+        <button onclick="switchTab('tabOrders')" id="btnTabOrders" class="px-4 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold whitespace-nowrap">📦 Orders</button>
+        <button onclick="switchTab('tabMenu')" id="btnTabMenu" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold whitespace-nowrap">🍽️ Menu</button>
+        <button onclick="switchTab('tabCategories')" id="btnTabCategories" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold whitespace-nowrap">🏷️ Categories</button>
+        <button onclick="switchTab('tabSettings')" id="btnTabSettings" class="px-4 py-1.5 bg-white border rounded-xl text-xs font-bold whitespace-nowrap">⚙️ Settings & Headings</button>
       </div>
 
-      <!-- TAB 1: ORDERS QUEUE -->
-      <div id="tabOrders" class="space-y-3">
-        <div id="ordersList" class="space-y-3"></div>
-      </div>
+      <div id="tabOrders" class="space-y-3"><div id="ordersList" class="space-y-3"></div></div>
 
-      <!-- TAB 2: MENU MANAGER (GROUPED UNDER HEADINGS) -->
       <div id="tabMenu" class="hidden space-y-4">
-        <div class="flex justify-between items-center">
-          <h3 class="font-bold text-slate-900 text-sm">Menu Items by Category Heading</h3>
-          <button onclick="openAddItemModal()" class="px-3.5 py-1.5 bg-[#c59b27] text-white rounded-xl text-xs font-bold shadow">+ Add Food Item</button>
-        </div>
+        <div class="flex justify-between items-center"><h3 class="font-bold text-sm">Menu Items by Category</h3><button onclick="openAddItemModal()" class="px-3.5 py-1.5 bg-[#c59b27] text-white rounded-xl text-xs font-bold shadow">+ Add Item</button></div>
         <div id="menuGroupedList" class="space-y-6"></div>
       </div>
 
-      <!-- TAB 3: CATEGORIES MANAGER (SIDEWAYS SCROLL LIST) -->
-      <div id="tabCategories" class="hidden bg-white p-5 rounded-2xl border border-stone-200 space-y-4 text-xs">
-        <div class="flex justify-between items-center border-b pb-2">
-          <div>
-            <h3 class="font-bold text-sm text-slate-900">Manage Category Headings</h3>
-            <p class="text-[11px] text-slate-500">These are the sideways-scrolling buttons on the customer menu.</p>
-          </div>
-          <button onclick="addNewCategoryPrompt()" class="px-3.5 py-1.5 bg-slate-900 text-white font-bold rounded-xl shadow">+ New Category</button>
-        </div>
+      <div id="tabCategories" class="hidden bg-white p-5 rounded-2xl border space-y-4 text-xs">
+        <div class="flex justify-between items-center border-b pb-2"><div><h3 class="font-bold text-sm">Category Headings</h3><p class="text-[11px] text-slate-500">Sideways scrolling tabs.</p></div><button onclick="addNewCategoryPrompt()" class="px-3.5 py-1.5 bg-slate-900 text-white font-bold rounded-xl shadow">+ New Category</button></div>
         <div id="categoryManagerList" class="space-y-2"></div>
       </div>
 
-      <!-- TAB 4: EDITABLE MAIN PAGE HEADINGS & BUSINESS SETTINGS -->
-      <div id="tabSettings" class="hidden bg-white p-5 rounded-2xl border border-stone-200 space-y-4 text-xs">
-        <h3 class="font-bold text-sm text-slate-900 border-b pb-2">Main Page Brand & Hero Headings</h3>
+      <div id="tabSettings" class="hidden bg-white p-5 rounded-2xl border space-y-4 text-xs">
+        <h3 class="font-bold text-sm border-b pb-2">Main Page Brand & Headings</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="font-bold text-slate-700">Store / Brand Name</label>
-            <input type="text" id="cfgBrandName" class="w-full p-2.5 border rounded-xl mt-1 bg-slate-50 font-bold">
-          </div>
-          <div>
-            <label class="font-bold text-slate-700">Halal Badge Text</label>
-            <input type="text" id="cfgHalalBadge" class="w-full p-2.5 border rounded-xl mt-1 bg-slate-50">
-          </div>
-          <div>
-            <label class="font-bold text-slate-700">Main Hero Heading</label>
-            <input type="text" id="cfgHeroHeading" class="w-full p-2.5 border rounded-xl mt-1 bg-slate-50 font-bold">
-          </div>
-          <div>
-            <label class="font-bold text-slate-700">Hero Subtitle / Description</label>
-            <input type="text" id="cfgHeroSubtitle" class="w-full p-2.5 border rounded-xl mt-1 bg-slate-50">
-          </div>
-          <div class="sm:col-span-2">
-            <label class="font-bold text-slate-700">Friday Collection & Times Banner Text</label>
-            <input type="text" id="cfgScheduleNotice" class="w-full p-2.5 border rounded-xl mt-1 bg-slate-50 font-bold">
-          </div>
+          <div><label class="font-bold text-slate-700">Store Name</label><input type="text" id="cfgBrandName" class="w-full p-2.5 border rounded-xl mt-1 font-bold"></div>
+          <div><label class="font-bold text-slate-700">Halal Badge</label><input type="text" id="cfgHalalBadge" class="w-full p-2.5 border rounded-xl mt-1"></div>
+          <div><label class="font-bold text-slate-700">Main Hero Title</label><input type="text" id="cfgHeroHeading" class="w-full p-2.5 border rounded-xl mt-1 font-bold"></div>
+          <div><label class="font-bold text-slate-700">Hero Subtitle</label><input type="text" id="cfgHeroSubtitle" class="w-full p-2.5 border rounded-xl mt-1"></div>
+          <div class="sm:col-span-2"><label class="font-bold text-slate-700">Schedule Banner Text</label><input type="text" id="cfgScheduleNotice" class="w-full p-2.5 border rounded-xl mt-1 font-bold"></div>
         </div>
 
-        <h3 class="font-bold text-sm text-slate-900 border-b pb-2 pt-2">EFT Banking & Delivery Parameters</h3>
+        <h3 class="font-bold text-sm border-b pb-2 pt-2">EFT & Delivery Details</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div><label class="font-bold">Collection Venue Address</label><input type="text" id="cfgAddr" class="w-full p-2 border rounded-xl mt-1"></div>
           <div><label class="font-bold">Delivery Fee (R)</label><input type="number" id="cfgFee" class="w-full p-2 border rounded-xl mt-1"></div>
           <div><label class="font-bold">Bank Name</label><input type="text" id="cfgBank" class="w-full p-2 border rounded-xl mt-1"></div>
-          <div><label class="font-bold">Account Holder Name</label><input type="text" id="cfgHolder" class="w-full p-2 border rounded-xl mt-1"></div>
+          <div><label class="font-bold">Account Holder</label><input type="text" id="cfgHolder" class="w-full p-2 border rounded-xl mt-1"></div>
           <div><label class="font-bold">Account Number</label><input type="text" id="cfgAcc" class="w-full p-2 border rounded-xl mt-1"></div>
           <div><label class="font-bold">Branch Code</label><input type="text" id="cfgBranch" class="w-full p-2 border rounded-xl mt-1"></div>
         </div>
@@ -124,76 +77,35 @@
     </main>
   </div>
 
-  <!-- ADD / EDIT MENU ITEM MODAL (10MB OPTIMIZED PHOTO UPLOAD) -->
   <div id="itemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
     <div class="bg-white max-w-md w-full rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto text-xs">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h3 class="font-bold text-slate-900 text-sm">Add Food Item</h3>
-        <button onclick="closeItemModal()" class="text-xl font-bold text-slate-400">×</button>
-      </div>
-
+      <div class="flex justify-between items-center border-b pb-2"><h3 class="font-bold text-sm">Add Food Item</h3><button onclick="closeItemModal()" class="text-xl font-bold text-slate-400">×</button></div>
       <form onsubmit="saveItemFromModal(event)" class="space-y-3">
-        <div>
-          <label class="font-bold block mb-1">Item Name *</label>
-          <input type="text" id="mItemName" required placeholder="e.g. Masala Steak Wrap" class="w-full p-2 border rounded-xl">
-        </div>
-        <div>
-          <label class="font-bold block mb-1">Assign to Category Heading *</label>
-          <select id="mItemCatSelect" class="w-full p-2 border rounded-xl bg-white font-bold mb-1"></select>
-        </div>
-        <div>
-          <label class="font-bold block mb-1">Price (R) *</label>
-          <input type="number" id="mItemPrice" required placeholder="65" class="w-full p-2 border rounded-xl">
-        </div>
-        <div>
-          <label class="font-bold block mb-1">Description</label>
-          <textarea id="mItemDesc" rows="2" placeholder="Ingredients and details..." class="w-full p-2 border rounded-xl"></textarea>
-        </div>
-        <div>
-          <label class="font-bold block mb-1">Custom Photo (Upload up to 10MB)</label>
-          <input type="file" id="mItemPhoto" accept="image/*" class="w-full p-1.5 border rounded-xl bg-slate-50">
-        </div>
-        <div class="flex items-center gap-2 pt-1">
-          <input type="checkbox" id="mItemFeatured">
-          <label for="mItemFeatured" class="font-bold">Mark as Popular / Featured</label>
-        </div>
+        <div><label class="font-bold block mb-1">Item Name *</label><input type="text" id="mItemName" required class="w-full p-2 border rounded-xl"></div>
+        <div><label class="font-bold block mb-1">Category Heading *</label><select id="mItemCatSelect" class="w-full p-2 border rounded-xl font-bold mb-1"></select></div>
+        <div><label class="font-bold block mb-1">Price (R) *</label><input type="number" id="mItemPrice" required class="w-full p-2 border rounded-xl"></div>
+        <div><label class="font-bold block mb-1">Description</label><textarea id="mItemDesc" rows="2" class="w-full p-2 border rounded-xl"></textarea></div>
+        <div><label class="font-bold block mb-1">Custom Photo (Max 10MB)</label><input type="file" id="mItemPhoto" accept="image/*" class="w-full p-1.5 border rounded-xl bg-slate-50"></div>
+        <div class="flex items-center gap-2 pt-1"><input type="checkbox" id="mItemFeatured"><label for="mItemFeatured" class="font-bold">Mark as Popular</label></div>
         <button type="submit" id="saveItemBtn" class="w-full py-2.5 bg-[#c59b27] text-white font-bold rounded-xl shadow">Save Item to Menu</button>
       </form>
     </div>
   </div>
 
   <script>
-    let adminPass = "";
-    let appData = { orders: [], public: {} };
-    let previousOrderCount = 0;
-
-    function formatSAPhone(phone) {
-      if (!phone) return "";
-      let cleaned = String(phone).replace(/[^0-9]/g, '');
-      if (cleaned.startsWith('0')) cleaned = '27' + cleaned.substring(1);
-      else if (!cleaned.startsWith('27') && cleaned.length === 9) cleaned = '27' + cleaned;
-      return cleaned;
-    }
+    let adminPass = "", appData = { orders: [], public: {} }, previousOrderCount = 0;
+    function formatSAPhone(p) { let c = String(p||'').replace(/[^0-9]/g, ''); if (c.startsWith('0')) c = '27' + c.substring(1); return c; }
 
     async function loginAdmin() {
       const pass = document.getElementById("passInput").value.trim();
       const res = await fetch("/api/data", { headers: { "Authorization": pass } });
       const json = await res.json();
       if (res.ok && json.authenticated) {
-        adminPass = pass;
-        appData = json;
-        previousOrderCount = (json.orders || []).length;
-        document.getElementById("loginGate").classList.add("hidden");
-        document.getElementById("adminApp").classList.remove("hidden");
-        renderOrders();
-        renderGroupedMenu();
-        renderCategoryManager();
-        loadSettingsInputs();
-
+        adminPass = pass; appData = json; previousOrderCount = (json.orders || []).length;
+        document.getElementById("loginGate").classList.add("hidden"); document.getElementById("adminApp").classList.remove("hidden");
+        renderOrders(); renderGroupedMenu(); renderCategoryManager(); loadSettingsInputs();
         setInterval(autoCheckNewOrders, 15000);
-      } else {
-        alert("Incorrect Administrator Password.");
-      }
+      } else alert("Incorrect Password.");
     }
 
     async function autoCheckNewOrders() {
@@ -201,288 +113,87 @@
       const res = await fetch("/api/data", { headers: { "Authorization": adminPass } });
       const json = await res.json();
       if (res.ok && json.orders) {
-        if (json.orders.length > previousOrderCount) {
-          playOrderChime();
-          const banner = document.getElementById("newOrderAlert");
-          banner.classList.remove("hidden");
-          setTimeout(() => banner.classList.add("hidden"), 5000);
-        }
-        previousOrderCount = json.orders.length;
-        appData.orders = json.orders;
-        renderOrders();
+        if (json.orders.length > previousOrderCount) { document.getElementById("newOrderAlert").classList.remove("hidden"); setTimeout(() => document.getElementById("newOrderAlert").classList.add("hidden"), 5000); }
+        previousOrderCount = json.orders.length; appData.orders = json.orders; renderOrders();
       }
     }
 
-    function playOrderChime() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.4);
-      } catch (e) {}
-    }
-
     function renderOrders() {
-      const container = document.getElementById("ordersList");
-      if (!appData.orders || !appData.orders.length) return (container.innerHTML = "<p class='text-xs text-slate-400'>No orders placed yet.</p>");
-
-      container.innerHTML = appData.orders.map(o => {
-        const saPhone = formatSAPhone(o.customer.phone);
-        const readyMsg = encodeURIComponent(`Assalāmu ʿalaykum ${o.customer.name}! 🌟\n\nYour Honeydees order #${o.orderNumber} is freshly packed and READY FOR COLLECTION at 14 Viola Street, Lentegeur!\n\nJazākallāhu Khayran!`);
-        
+      const c = document.getElementById("ordersList");
+      if (!appData.orders.length) return (c.innerHTML = "<p class='text-slate-400'>No orders yet.</p>");
+      c.innerHTML = appData.orders.map(o => {
+        const p = formatSAPhone(o.customer.phone);
+        const msg = encodeURIComponent(`Assalāmu ʿalaykum ${o.customer.name}!\nYour Honeydees order #${o.orderNumber} is READY FOR COLLECTION!`);
         return `
-        <div class="p-4 bg-white rounded-2xl border border-stone-200 space-y-2 text-xs shadow-sm">
-          <div class="flex justify-between items-center">
-            <strong class="font-mono text-sm text-[#9e7914]">${o.orderNumber}</strong>
-            <span class="px-2.5 py-0.5 rounded-full font-bold uppercase ${o.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${o.status}</span>
-          </div>
-          <div><strong>${o.customer.name}</strong> (${o.customer.phone}) • ${o.orderType} ${o.deliveryAddress ? `• ${o.deliveryAddress}` : ''}</div>
-          <div class="border-t pt-1 space-y-1">
-            ${o.items.map(i => `<div class="flex justify-between text-slate-500"><span>${i.quantity}x ${i.name}</span><span>R ${Number(i.lineTotal).toFixed(2)}</span></div>`).join('')}
-            <div class="flex justify-between font-black text-slate-900 border-t pt-1"><span>Total</span><span>R ${Number(o.total).toFixed(2)}</span></div>
-          </div>
-          ${o.popBase64 ? `<a href="${o.popBase64}" target="_blank" class="inline-block text-[#9e7914] font-bold underline"><i class="fa-solid fa-receipt"></i> View Proof of Payment Receipt</a>` : '<span class="text-rose-600 block">⚠️ No POP attached</span>'}
-          
+        <div class="p-4 bg-white rounded-2xl border space-y-2 text-xs shadow-sm">
+          <div class="flex justify-between items-center"><strong class="font-mono text-sm text-[#9e7914]">${o.orderNumber}</strong><span class="px-2.5 py-0.5 rounded-full font-bold uppercase ${o.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${o.status}</span></div>
+          <div><strong>${o.customer.name}</strong> (${o.customer.phone}) • ${o.orderType}</div>
+          <div class="border-t pt-1 space-y-1">${o.items.map(i => `<div class="flex justify-between"><span>${i.quantity}x ${i.name}</span><span>R ${Number(i.lineTotal).toFixed(2)}</span></div>`).join('')}<div class="flex justify-between font-black border-t pt-1"><span>Total</span><span>R ${Number(o.total).toFixed(2)}</span></div></div>
+          ${o.popBase64 ? `<a href="${o.popBase64}" target="_blank" class="text-[#9e7914] font-bold underline"><i class="fa-solid fa-receipt"></i> View POP</a>` : ''}
           <div class="flex flex-wrap gap-2 pt-2 items-center">
             <button onclick="updateStatus('${o.id}', 'PREPARING')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">Preparing</button>
-            <button onclick="updateStatus('${o.id}', 'READY')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow">Mark Ready</button>
-            <button onclick="updateStatus('${o.id}', 'COMPLETED')" class="px-2.5 py-1.5 bg-slate-900 hover:bg-black text-white rounded-lg font-bold">Complete</button>
-            
-            <a href="https://wa.me/${saPhone}?text=${readyMsg}" target="_blank" class="ml-auto px-3 py-1.5 bg-[#25d366] hover:bg-[#20ba5a] text-white rounded-lg font-bold flex items-center gap-1 shadow">
-              <i class="fa-brands fa-whatsapp"></i> Notify Ready
-            </a>
+            <button onclick="updateStatus('${o.id}', 'READY')" class="px-2.5 py-1.5 bg-emerald-600 text-white rounded-lg font-bold">Mark Ready</button>
+            <button onclick="updateStatus('${o.id}', 'COMPLETED')" class="px-2.5 py-1.5 bg-slate-900 text-white rounded-lg font-bold">Complete</button>
+            <a href="https://wa.me/${p}?text=${msg}" target="_blank" class="ml-auto px-3 py-1.5 bg-[#25d366] text-white rounded-lg font-bold"><i class="fa-brands fa-whatsapp"></i> Notify</a>
           </div>
         </div>`;
       }).join('');
     }
 
-    async function updateStatus(orderId, status) {
-      await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": adminPass },
-        body: JSON.stringify({ action: "updateOrderStatus", data: { orderId, status } })
-      });
-      refreshAdminData();
-    }
+    async function updateStatus(id, st) { await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": adminPass }, body: JSON.stringify({ action: "updateOrderStatus", data: { orderId: id, status: st } }) }); refreshAdminData(); }
 
     function renderGroupedMenu() {
-      const container = document.getElementById("menuGroupedList");
-      const cats = appData.public?.categories || [];
-      const menu = appData.public?.menu || [];
-
-      if (!menu.length) return (container.innerHTML = "<p class='text-xs text-slate-400'>No items in menu.</p>");
-
-      container.innerHTML = cats.map(c => {
-        const items = menu.filter(i => i.categoryId === c.id);
-        return `
-          <div class="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm space-y-3">
-            <div class="flex justify-between items-center border-b pb-2">
-              <h4 class="font-extrabold text-[#9e7914] text-xs uppercase tracking-wider">${c.name} (${items.length} items)</h4>
-            </div>
-            <div class="space-y-2">
-              ${items.length ? items.map(m => `
-                <div class="flex justify-between items-center p-2 bg-stone-50 rounded-xl border text-xs">
-                  <div class="flex items-center gap-3">
-                    <img src="${m.imageUrl}" class="w-12 h-12 rounded-lg object-cover border" onerror="this.src='https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600'">
-                    <div>
-                      <strong class="block text-slate-900">${m.name}</strong>
-                      <span class="text-slate-500">R ${Number(m.price).toFixed(2)}</span>
-                    </div>
-                  </div>
-                  <button onclick="deleteMenuItem('${m.id}')" class="text-rose-600 font-bold px-2 py-1 hover:bg-rose-50 rounded">Delete</button>
-                </div>
-              `).join('') : '<p class="text-[11px] text-slate-400">No items under this heading yet.</p>'}
-            </div>
-          </div>`;
+      const c = document.getElementById("menuGroupedList"), cats = appData.public?.categories || [], menu = appData.public?.menu || [];
+      if (!menu.length) return (c.innerHTML = "<p class='text-slate-400'>No items.</p>");
+      c.innerHTML = cats.map(cat => {
+        const itms = menu.filter(i => i.categoryId === cat.id);
+        return `<div class="bg-white p-4 rounded-2xl border space-y-3"><h4 class="font-extrabold text-[#9e7914] text-xs uppercase">${cat.name}</h4><div class="space-y-2">
+          ${itms.length ? itms.map(m => `<div class="flex justify-between items-center p-2 bg-stone-50 rounded-xl border text-xs"><div class="flex items-center gap-3"><img src="${m.imageUrl}" class="w-12 h-12 rounded-lg object-cover"><div><strong class="block">${m.name}</strong><span class="text-slate-500">R ${m.price}</span></div></div><button onclick="delMenu('${m.id}')" class="text-rose-600 font-bold px-2 py-1">Delete</button></div>`).join('') : '<p class="text-[11px] text-slate-400">No items</p>'}
+        </div></div>`;
       }).join('');
     }
 
     function renderCategoryManager() {
-      const list = document.getElementById("categoryManagerList");
-      const cats = appData.public?.categories || [];
-      list.innerHTML = cats.map((c, i) => `
-        <div class="flex justify-between items-center p-3 bg-slate-50 border rounded-xl text-xs">
-          <input type="text" value="${c.name}" onchange="appData.public.categories[${i}].name=this.value;saveCategoriesAndMenu();" class="p-1.5 border rounded-lg font-bold flex-grow mr-2 bg-white">
-          <button onclick="deleteCategory('${c.id}')" class="text-rose-600 font-bold px-2 py-1 hover:bg-rose-100 rounded">Delete Heading</button>
-        </div>
+      document.getElementById("categoryManagerList").innerHTML = (appData.public?.categories || []).map((c, i) => `
+        <div class="flex justify-between items-center p-3 bg-slate-50 border rounded-xl"><input type="text" value="${c.name}" onchange="appData.public.categories[${i}].name=this.value;saveCat();" class="p-1.5 border rounded-lg font-bold flex-grow mr-2"><button onclick="delCat('${c.id}')" class="text-rose-600 font-bold px-2">Delete</button></div>
       `).join('');
     }
 
     function addNewCategoryPrompt() {
-      const name = prompt("Enter new Category Heading (e.g. Burgers & Grills):");
-      if (!name) return;
-      if (!appData.public.categories) appData.public.categories = [];
-      appData.public.categories.push({ id: "cat_" + Date.now(), name: name.trim() });
-      saveCategoriesAndMenu();
-      renderCategoryManager();
+      const n = prompt("New Category:"); if (!n) return;
+      appData.public.categories.push({ id: "cat_" + Date.now(), name: n.trim() }); saveCat(); renderCategoryManager();
     }
-
-    function deleteCategory(id) {
-      if (!confirm("Delete this category heading?")) return;
-      appData.public.categories = appData.public.categories.filter(c => c.id !== id);
-      saveCategoriesAndMenu();
-      renderCategoryManager();
-      renderGroupedMenu();
-    }
+    function delCat(id) { appData.public.categories = appData.public.categories.filter(c => c.id !== id); saveCat(); renderCategoryManager(); renderGroupedMenu(); }
 
     function openAddItemModal() {
-      document.getElementById("mItemName").value = "";
-      document.getElementById("mItemPrice").value = "";
-      document.getElementById("mItemDesc").value = "";
-      document.getElementById("mItemPhoto").value = "";
-
-      const sel = document.getElementById("mItemCatSelect");
-      const cats = appData.public?.categories || [];
-      sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-
-      document.getElementById("itemModal").classList.remove("hidden");
-      document.getElementById("itemModal").classList.add("flex");
+      document.getElementById("mItemName").value = ""; document.getElementById("mItemPrice").value = ""; document.getElementById("mItemDesc").value = ""; document.getElementById("mItemPhoto").value = "";
+      document.getElementById("mItemCatSelect").innerHTML = (appData.public?.categories || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      document.getElementById("itemModal").classList.remove("hidden"); document.getElementById("itemModal").classList.add("flex");
     }
-
-    function closeItemModal() {
-      document.getElementById("itemModal").classList.add("hidden");
-      document.getElementById("itemModal").classList.remove("flex");
-    }
+    function closeItemModal() { document.getElementById("itemModal").classList.add("hidden"); document.getElementById("itemModal").classList.remove("flex"); }
 
     async function saveItemFromModal(e) {
-      e.preventDefault();
-      const btn = document.getElementById("saveItemBtn");
-      btn.innerText = "Optimizing Photo & Saving..."; btn.disabled = true;
-
-      const catId = document.getElementById("mItemCatSelect").value;
+      e.preventDefault(); const btn = document.getElementById("saveItemBtn"); btn.innerText = "Saving..."; btn.disabled = true;
       let imgUrl = "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600";
-      const photoFile = document.getElementById("mItemPhoto").files[0];
+      const file = document.getElementById("mItemPhoto").files[0];
+      if (file) imgUrl = await new Promise(res => { const r = new FileReader(); r.onload = e => { const i = new Image(); i.onload = () => { const c = document.createElement("canvas"), m = 800; let w = i.width, h = i.height; if (w > h && w > m) { h = Math.round(h * m / w); w = m; } else if (h > m) { w = Math.round(w * m / h); h = m; } c.width = w; c.height = h; c.getContext("2d").drawImage(i, 0, 0, w, h); res(c.toDataURL("image/jpeg", 0.75)); }; i.src = e.target.result; }; r.readAsDataURL(file); });
 
-      if (photoFile) {
-        imgUrl = await optimizeImageToBase64(photoFile);
-      }
-
-      if (!appData.public.menu) appData.public.menu = [];
-      appData.public.menu.push({
-        id: "item_" + Date.now(),
-        name: document.getElementById("mItemName").value.trim(),
-        price: Number(document.getElementById("mItemPrice").value),
-        description: document.getElementById("mItemDesc").value.trim(),
-        categoryId: catId,
-        imageUrl: imgUrl,
-        featured: document.getElementById("mItemFeatured").checked,
-        available: true
-      });
-
-      await saveCategoriesAndMenu();
-      btn.innerText = "Save Item to Menu"; btn.disabled = false;
-      closeItemModal();
-      renderGroupedMenu();
+      appData.public.menu.push({ id: "item_" + Date.now(), name: document.getElementById("mItemName").value.trim(), price: Number(document.getElementById("mItemPrice").value), description: document.getElementById("mItemDesc").value.trim(), categoryId: document.getElementById("mItemCatSelect").value, imageUrl: imgUrl, featured: document.getElementById("mItemFeatured").checked, available: true });
+      await saveCat(); btn.innerText = "Save to Menu"; btn.disabled = false; closeItemModal(); renderGroupedMenu();
     }
-
-    function optimizeImageToBase64(file) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement("canvas");
-            const maxDimension = 800;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height && width > maxDimension) {
-              height = Math.round((height * maxDimension) / width);
-              width = maxDimension;
-            } else if (height > maxDimension) {
-              width = Math.round((width * maxDimension) / height);
-              height = maxDimension;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL("image/jpeg", 0.75));
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function deleteMenuItem(id) {
-      if (!confirm("Delete this food item?")) return;
-      appData.public.menu = (appData.public.menu || []).filter(i => i.id !== id);
-      await saveCategoriesAndMenu();
-      renderGroupedMenu();
-    }
-
-    async function saveCategoriesAndMenu() {
-      await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": adminPass },
-        body: JSON.stringify({ action: "adminSaveAll", data: { menu: appData.public.menu, categories: appData.public.categories } })
-      });
-    }
+    async function delMenu(id) { if(!confirm("Delete?")) return; appData.public.menu = appData.public.menu.filter(i => i.id !== id); await saveCat(); renderGroupedMenu(); }
+    async function saveCat() { await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": adminPass }, body: JSON.stringify({ action: "adminSaveAll", data: { menu: appData.public.menu, categories: appData.public.categories } }) }); }
 
     function loadSettingsInputs() {
       const s = appData.public?.settings || {};
-      document.getElementById("cfgBrandName").value = s.businessName || "Honeydees";
-      document.getElementById("cfgHalalBadge").value = s.halalBadge || "100% Strictly Halal";
-      document.getElementById("cfgHeroHeading").value = s.heroHeading || "Cape Town's Friday Night Treat";
-      document.getElementById("cfgHeroSubtitle").value = s.heroSubtitle || "Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.";
-      document.getElementById("cfgScheduleNotice").value = s.scheduleNotice || "Collection: 14 Viola St, Lentegeur (From 6:00 PM)";
-      document.getElementById("cfgAddr").value = s.collectionAddress || "14 Viola Street, Lentegeur, Mitchells Plain";
-      document.getElementById("cfgFee").value = s.deliveryFee || 30;
-      document.getElementById("cfgBank").value = s.bankName || "Standard Bank";
-      document.getElementById("cfgHolder").value = s.accountHolder || "Honeydees Food Enterprise";
-      document.getElementById("cfgAcc").value = s.accountNumber || "10192837465";
-      document.getElementById("cfgBranch").value = s.branchCode || "051001";
+      document.getElementById("cfgBrandName").value = s.businessName || "Honeydees"; document.getElementById("cfgHalalBadge").value = s.halalBadge || "100% Strictly Halal"; document.getElementById("cfgHeroHeading").value = s.heroHeading || "Cape Town's Friday Night Treat"; document.getElementById("cfgHeroSubtitle").value = s.heroSubtitle || ""; document.getElementById("cfgScheduleNotice").value = s.scheduleNotice || ""; document.getElementById("cfgAddr").value = s.collectionAddress || ""; document.getElementById("cfgFee").value = s.deliveryFee || 30; document.getElementById("cfgBank").value = s.bankName || ""; document.getElementById("cfgHolder").value = s.accountHolder || ""; document.getElementById("cfgAcc").value = s.accountNumber || ""; document.getElementById("cfgBranch").value = s.branchCode || "";
     }
-
     async function saveAdminSettings() {
-      const settings = {
-        businessName: document.getElementById("cfgBrandName").value.trim(),
-        halalBadge: document.getElementById("cfgHalalBadge").value.trim(),
-        heroHeading: document.getElementById("cfgHeroHeading").value.trim(),
-        heroSubtitle: document.getElementById("cfgHeroSubtitle").value.trim(),
-        scheduleNotice: document.getElementById("cfgScheduleNotice").value.trim(),
-        collectionAddress: document.getElementById("cfgAddr").value.trim(),
-        deliveryFee: document.getElementById("cfgFee").value.trim(),
-        bankName: document.getElementById("cfgBank").value.trim(),
-        accountHolder: document.getElementById("cfgHolder").value.trim(),
-        accountNumber: document.getElementById("cfgAcc").value.trim(),
-        branchCode: document.getElementById("cfgBranch").value.trim()
-      };
-
-      await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": adminPass },
-        body: JSON.stringify({ action: "adminSaveAll", data: { settings } })
-      });
-      alert("All headings, brand details, and business settings saved live!");
+      const settings = { businessName: document.getElementById("cfgBrandName").value, halalBadge: document.getElementById("cfgHalalBadge").value, heroHeading: document.getElementById("cfgHeroHeading").value, heroSubtitle: document.getElementById("cfgHeroSubtitle").value, scheduleNotice: document.getElementById("cfgScheduleNotice").value, collectionAddress: document.getElementById("cfgAddr").value, deliveryFee: document.getElementById("cfgFee").value, bankName: document.getElementById("cfgBank").value, accountHolder: document.getElementById("cfgHolder").value, accountNumber: document.getElementById("cfgAcc").value, branchCode: document.getElementById("cfgBranch").value };
+      await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": adminPass }, body: JSON.stringify({ action: "adminSaveAll", data: { settings } }) }); alert("Settings saved!");
     }
-
-    async function refreshAdminData() {
-      const res = await fetch("/api/data", { headers: { "Authorization": adminPass } });
-      appData = await res.json();
-      renderOrders();
-    }
-
-    function switchTab(t) {
-      ["tabOrders", "tabMenu", "tabCategories", "tabSettings"].forEach(id => document.getElementById(id).classList.add("hidden"));
-      document.getElementById(t).classList.remove("hidden");
-
-      ["btnTabOrders", "btnTabMenu", "btnTabCategories", "btnTabSettings"].forEach(b => {
-        document.getElementById(b).className = "px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700";
-      });
-      const activeBtnMap = { tabOrders: "btnTabOrders", tabMenu: "btnTabMenu", tabCategories: "btnTabCategories", tabSettings: "btnTabSettings" };
-      document.getElementById(activeBtnMap[t]).className = "px-4 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold";
-    }
+    async function refreshAdminData() { const res = await fetch("/api/data", { headers: { "Authorization": adminPass } }); appData = await res.json(); renderOrders(); }
+    function switchTab(t) { ["tabOrders", "tabMenu", "tabCategories", "tabSettings"].forEach(id => document.getElementById(id).classList.add("hidden")); document.getElementById(t).classList.remove("hidden"); ["btnTabOrders", "btnTabMenu", "btnTabCategories", "btnTabSettings"].forEach(b => document.getElementById(b).className = "px-4 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-700"); document.getElementById({tabOrders:"btnTabOrders", tabMenu:"btnTabMenu", tabCategories:"btnTabCategories", tabSettings:"btnTabSettings"}[t]).className = "px-4 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold"; }
   </script>
 </body>
 </html>
