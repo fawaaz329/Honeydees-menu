@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Honeydees | Live Order Status</title>
+  <link rel="manifest" href="/manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>body { background-color: #faf8f5; font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+</head>
+<body class="p-4 sm:p-8 flex justify-center items-center min-h-screen">
+  
+  <div class="max-w-md w-full bg-white rounded-3xl border shadow-xl p-6 space-y-5">
+    <div class="flex justify-between items-center border-b pb-3">
+      <a href="/" class="text-xs font-bold text-slate-500 hover:text-slate-900">← Back to Menu</a>
+      <span class="text-xs font-bold text-[#c59b27]">Honeydees Order Tracker</span>
+    </div>
+    
+    <div id="notifyPrompt" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-2xl text-center text-xs space-y-2">
+      <p class="font-bold text-amber-900">🔔 Enable lockscreen food updates?</p>
+      <button onclick="requestAlerts()" class="px-4 py-1.5 bg-[#c59b27] hover:bg-[#9e7914] text-white rounded-xl font-bold shadow text-xs">Allow Notifications</button>
+    </div>
+
+    <div id="statusHeroBanner" class="hidden p-4 rounded-2xl text-center animate-pulse">
+      <span class="text-2xl" id="statusHeroIcon">🎉</span>
+      <h3 class="font-extrabold text-sm mt-1" id="statusHeroTitle"></h3>
+      <p class="text-xs mt-0.5" id="statusHeroSub"></p>
+    </div>
+    
+    <div id="oCont" class="space-y-6"></div>
+  </div>
+
+  <script>
+    let cS = {};
+
+    function esc(s) { return String(s||'').replace(/[&<>'"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m])); }
+
+    function triggerNativeNotification(title, body) {
+      try {
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        if (window.Notification && Notification.permission === "granted") {
+          if (navigator.serviceWorker) { 
+            navigator.serviceWorker.ready.then(function(reg) { 
+              reg.showNotification(title, { body: body, icon: "/icons/icon-192.png", data: { url: "/order" } }); 
+            }); 
+          }
+        }
+      } catch(e) {}
+    }
+
+    async function loadOrders() {
+      let ts = JSON.parse(localStorage.getItem("hd_tokens") || "[]");
+      let q = new URLSearchParams(window.location.search).get("track");
+      let found = false;
+      for (let i = 0; i < ts.length; i++) { if (ts[i].token === q) found = true; }
+      if (q && !found) ts.push({ token: q });
+
+      if (!ts.length) {
+        document.getElementById("oCont").innerHTML = "<div class=\"text-center py-6\"><p class=\"text-xs text-slate-400 mb-3\">No active orders found.</p><a href=\"/\" class=\"px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs\">Browse Menu</a></div>";
+        return;
+      }
+
+      let preservedTokens = [];
+      let html = "";
+
+      for (let i = 0; i < ts.length; i++) {
+        const t = ts[i];
+        try {
+          const r = await fetch("/api/data?track=" + encodeURIComponent(t.token));
+          if (r.ok) {
+            const d = await r.json();
+
+            if (d && d.orderNumber) {
+              if (cS[d.trackingToken] !== d.status) {
+                const oNum = esc(d.orderNumber);
+                if (d.status === "PREPARING") {
+                  triggerNativeNotification("Honeydees Feast Update", "👨‍🍳 Order #" + oNum + " is now being freshly prepared!");
+                } else if (d.status === "READY") {
+                  if (d.orderType === "DELIVERY") {
+                    showHeroBanner("🚚", "YOUR ORDER IS ON ITS WAY!", "Our driver is en route with your fresh meal.", "bg-sky-50 border-2 border-sky-500 text-sky-900");
+                    triggerNativeNotification("Honeydees Delivery!", "🚚 Order #" + oNum + " is on its way to you!");
+                  } else {
+                    showHeroBanner("🎉", "YOUR ORDER IS READY FOR COLLECTION!", "Please collect at 14 Viola Street.", "bg-emerald-50 border-2 border-emerald-500 text-emerald-900");
+                    triggerNativeNotification("Honeydees Order Ready!", "🎉 Order #" + oNum + " is ready for collection!");
+                  }
+                }
+              }
+              cS[d.trackingToken] = d.status;
+
+              if (d.status !== "COMPLETED" && d.status !== "CANCELLED") {
+                preservedTokens.push(t);
+
+                let pillClass = "bg-amber-100 text-amber-800";
+                let statusLabel = esc(d.status);
+                if (d.status === "READY") {
+                  pillClass = (d.orderType === "DELIVERY") ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800";
+                  statusLabel = (d.orderType === "DELIVERY") ? "ON ITS WAY" : "READY TO COLLECT";
+                } else if (d.status === "PAYMENT VERIFIED") {
+                  pillClass = "bg-emerald-100 text-emerald-800";
+                }
+
+                let itemsHtml = "";
+                if (d.items && d.items.length) {
+                  for (let x = 0; x < d.items.length; x++) {
+                    const itm = d.items[x];
+                    itemsHtml += "<div class=\"flex justify-between py-1\"><span>" + itm.quantity + "x " + esc(itm.name) + "</span><strong class=\"font-mono\">R " + Number(itm.lineTotal || 0).toFixed(2) + "</strong></div>";
+                  }
+                }
+
+                const s = d.settings || {};
+
+                html += 
+                  "<div class=\"p-4 border border-stone-200 rounded-2xl shadow-sm bg-white mb-6\">" +
+                    "<div class=\"flex justify-between items-center border-b pb-2 mb-2\">" +
+                      "<h2 class=\"text-xl font-black font-mono text-slate-900\">" + esc(d.orderNumber) + "</h2>" +
+                      "<span class=\"px-3 py-1 rounded-full text-[10px] font-black uppercase " + pillClass + "\">" + statusLabel + "</span>" +
+                    "</div>";
+
+                if (d.status === "AWAITING PAYMENT") {
+                  html += 
+                    "<div class=\"bg-amber-50 border-2 border-amber-200 p-4 rounded-xl text-center space-y-2 mb-3\">" +
+                      "<h4 class=\"font-extrabold text-amber-900 text-sm\">Action Required: Make Payment</h4>" +
+                      "<p class=\"text-xs text-amber-800\">Please EFT <strong class=\"font-black text-lg\">R " + Number(d.total || 0).toFixed(2) + "</strong> to confirm your order.</p>" +
+                      "<div class=\"bg-white p-2.5 rounded-lg text-left text-xs border border-amber-200 space-y-1\">" +
+                        "<div class=\"flex justify-between\"><span>Bank:</span><strong>" + esc(s.bankName || "Standard Bank") + "</strong></div>" +
+                        "<div class=\"flex justify-between\"><span>Account:</span><strong class=\"font-mono\">" + esc(s.accountNumber || "") + "</strong></div>" +
+                        "<div class=\"flex justify-between\"><span>Branch Code:</span><strong class=\"font-mono\">" + esc(s.branchCode || "") + "</strong></div>" +
+                        "<div class=\"flex justify-between text-rose-700 pt-2 mt-1 border-t border-amber-200 font-black\"><span>Payment Reference:</span><strong class=\"font-mono text-base\">" + esc(d.orderNumber) + "</strong></div>" +
+                      "</div>" +
+                    "</div>" +
+                    "<div class=\"p-3 bg-stone-50 border rounded-xl space-y-2\">" +
+                      "<label class=\"font-bold text-slate-700 text-xs block\"><i class=\"fa-solid fa-receipt mr-1 text-[#c59b27]\"></i> Upload Proof of Payment (POP)</label>" +
+                      "<input type=\"file\" id=\"latePopFile_" + d.trackingToken + "\" accept=\"image/*,application/pdf\" class=\"w-full p-2 bg-white border rounded-lg text-xs\">" +
+                      "<button onclick=\"uploadLatePop('" + d.trackingToken + "')\" id=\"btn_" + d.trackingToken + "\" class=\"w-full py-2.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow transition\">Upload & Submit for Review</button>" +
+                    "</div>";
+                } else if (d.status === "PAYMENT UNDER REVIEW") {
+                  html += 
+                    "<div class=\"bg-blue-50 border-2 border-blue-200 p-4 rounded-xl text-center space-y-2 mb-3\">" +
+                      "<i class=\"fa-solid fa-clock-rotate-left text-2xl text-blue-500\"></i>" +
+                      "<h4 class=\"font-extrabold text-blue-900 text-sm\">Proof Received & Under Review</h4>" +
+                      "<p class=\"text-xs text-blue-800 leading-relaxed\">Your payment proof has been submitted. Your order is <strong class=\"uppercase underline\">not</strong> confirmed until payment has been verified by the kitchen. Please wait for your order status to change to <strong>Payment Verified</strong>.</p>" +
+                    "</div>";
+                } else if (d.status === "PAYMENT REJECTED") {
+                  html += 
+                    "<div class=\"bg-rose-50 border-2 border-rose-400 p-4 rounded-xl text-center space-y-2 mb-3\">" +
+                      "<i class=\"fa-solid fa-triangle-exclamation text-2xl text-rose-600\"></i>" +
+                      "<h4 class=\"font-extrabold text-rose-900 text-sm\">Payment Unverified / Rejected</h4>" +
+                      "<p class=\"text-xs text-rose-800\">We could not verify your payment in our bank account. Please ensure you used the correct reference and re-upload a valid proof of payment receipt.</p>" +
+                      "<input type=\"file\" id=\"latePopFile_" + d.trackingToken + "\" accept=\"image/*,application/pdf\" class=\"w-full p-2 bg-white border border-rose-300 rounded-lg text-xs mt-2\">" +
+                      "<button onclick=\"uploadLatePop('" + d.trackingToken + "')\" id=\"btn_" + d.trackingToken + "\" class=\"w-full py-2.5 bg-rose-700 text-white font-bold rounded-xl text-xs shadow mt-2\">Re-Upload Receipt</button>" +
+                    "</div>";
+                }
+
+                html += 
+                    "<div class=\"text-xs text-slate-700 space-y-1 mt-3 pt-3 border-t\">" +
+                      "<div class=\"flex justify-between\"><span>Fulfilment:</span><strong>" + esc(d.orderType) + "</strong></div>" +
+                      (d.orderType === "DELIVERY" 
+                        ? "<div class=\"flex justify-between\"><span>Delivery Address:</span><strong>" + esc(d.deliveryAddress) + "</strong></div>" 
+                        : "<div class=\"flex justify-between\"><span>Collection Address:</span><strong>" + esc(s.collectionAddress || "14 Viola St, Lentegeur") + "</strong></div>") +
+                      "<div class=\"flex justify-between mt-2 pt-2 border-t font-bold\"><span>Total Order Amount:</span><strong class=\"font-mono text-sm text-slate-900\">R " + Number(d.total || 0).toFixed(2) + "</strong></div>" +
+                    "</div>" +
+                  "</div>";
+              }
+            }
+          } else if (r.status !== 404) {
+            preservedTokens.push(t);
+          }
+        } catch (e) {
+          preservedTokens.push(t);
+        }
+      }
+
+      localStorage.setItem("hd_tokens", JSON.stringify(preservedTokens));
+
+      if (!preservedTokens.length && !html) {
+        html = "<div class=\"text-center py-6\"><p class=\"text-xs text-slate-400 mb-3\">All your orders have been completed!</p><a href=\"/\" class=\"px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs\">Order Again</a></div>";
+      }
+      document.getElementById("oCont").innerHTML = html;
+    }
+
+    function showHeroBanner(icon, title, sub, classes) {
+      const banner = document.getElementById("statusHeroBanner");
+      banner.className = "p-4 rounded-2xl text-center animate-pulse " + classes;
+      document.getElementById("statusHeroIcon").innerText = icon;
+      document.getElementById("statusHeroTitle").innerText = title;
+      document.getElementById("statusHeroSub").innerText = sub;
+      banner.classList.remove("hidden");
+    }
+
+    function fastOptimizeReceipt(file) {
+      return new Promise(function(resolve) {
+        if (file.type === "application/pdf") {
+          const reader = new FileReader();
+          reader.onload = function() { resolve(reader.result); };
+          reader.readAsDataURL(file);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            try {
+              const canvas = document.createElement("canvas");
+              const maxDim = 1000;
+              let w = img.width; let h = img.height;
+              if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; } else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+              canvas.width = w; canvas.height = h;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, w, h);
+              resolve(canvas.toDataURL("image/jpeg", 0.70));
+            } catch(err) { resolve(reader.result); }
+          };
+          img.onerror = function() { resolve(reader.result); };
+          img.src = e.target.result;
+        };
+        reader.onerror = function() { resolve(""); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function uploadLatePop(token) {
+      const f = document.getElementById("latePopFile_" + token).files[0];
+      if (!f) return alert("Please select a receipt image or PDF.");
+
+      const btn = document.getElementById("btn_" + token);
+      btn.innerText = "Processing...";
+      btn.disabled = true;
+
+      const b64 = await fastOptimizeReceipt(f);
+
+      try {
+        const r = await fetch("/api/data", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "uploadLatePOP", data: { trackingToken: token, popBase64: b64 } })
+        });
+        const d = await r.json();
+        if (r.ok) {
+          alert("Proof of payment submitted for review!");
+          loadOrders();
+        } else {
+          alert(d.error || "Upload failed");
+        }
+      } catch (err) {
+        alert("Network error. Please try again.");
+      } finally {
+        btn.innerText = "Upload & Submit for Review";
+        btn.disabled = false;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", function() {
+      try { if (window.Notification && Notification.permission === "default") { document.getElementById("notifyPrompt").classList.remove("hidden"); } } catch(e){}
+      loadOrders();
+      setInterval(loadOrders, 8000);
+    });
+  </script>
+</body>
+</html>
