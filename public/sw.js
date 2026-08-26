@@ -1,4 +1,4 @@
-const CACHE_NAME = "honeydees-v6-live";
+const CACHE_NAME = "honeydees-v7-perf";
 const ASSETS = ["/", "/order", "/admin", "/manifest.json"];
 
 self.addEventListener("install", (e) => {
@@ -17,11 +17,13 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
+  // APIs always bypass cache for instant real-time data
   if (url.pathname.startsWith("/api/")) {
     e.respondWith(fetch(e.request));
     return;
   }
 
+  // Network-First for HTML pages so updates are instantaneous
   if (e.request.mode === "navigate" || ASSETS.includes(url.pathname)) {
     e.respondWith(
       fetch(e.request)
@@ -38,7 +40,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
 });
 
-// Route notification clicks directly to /order
+// Direct notification clicks to /order for customers or /admin for staff
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || "/order";
@@ -46,7 +48,7 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
       for (let client of windowClients) {
-        if (client.url.includes("/order") && "focus" in client) {
+        if (client.url.includes(targetUrl) && "focus" in client) {
           return client.focus();
         }
       }
