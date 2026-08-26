@@ -2,6 +2,8 @@ const SEED_DATA = {
   settings: {
     businessName: "Honeydees",
     halalBadge: "100% Strictly Halal",
+    isStoreOpen: true,
+    closedNotice: "We are currently closed for orders. Next ordering window opens Friday at 2:00 PM.",
     heroHeading: "Cape Town's Friday Night Treat",
     heroSubtitle: "Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.",
     scheduleNotice: "Collection: 14 Viola St, Lentegeur (From 6:00 PM)",
@@ -56,7 +58,7 @@ export async function onRequest(context) {
       const trackToken = url.searchParams.get("track");
       if (trackToken) {
         const id = await env.HONEYDEES_DB.get(`track:${trackToken}`);
-        if (!id) return jsonResponse({ error: "Not found" }, 404);
+        if (!id) return jsonResponse({ error: "Order not found" }, 404);
         return jsonResponse(await env.HONEYDEES_DB.get(`order:${id}`, "json"));
       }
 
@@ -83,11 +85,15 @@ export async function onRequest(context) {
       const body = await request.json();
 
       if (body.action === "createOrder") {
+        const settings = await env.HONEYDEES_DB.get("settings", "json") || SEED_DATA.settings;
+        if (settings.isStoreOpen === false) {
+          return jsonResponse({ error: settings.closedNotice || "Ordering is currently closed." }, 400);
+        }
+
         const { customer, orderType, deliveryAddress, items, popBase64 } = body.data;
         if (!popBase64) return jsonResponse({ error: "Proof of Payment is strictly required." }, 400);
 
         const menu = await env.HONEYDEES_DB.get("menu", "json") || SEED_DATA.menu;
-        const settings = await env.HONEYDEES_DB.get("settings", "json") || SEED_DATA.settings;
         const menuMap = new Map(menu.map(i => [i.id, i]));
         let subtotal = 0, verifiedItems = [];
 
@@ -155,16 +161,17 @@ export async function onRequest(context) {
         return jsonResponse({ success: true });
       }
 
+      // Permanent deep purge of completed orders & photos from KV
       if (body.action === "clearCompletedOrders") {
         let index = await env.HONEYDEES_DB.get("index:orders", "json") || [];
         let newIndex = [];
-        for (const i of index) {
-          const order = await env.HONEYDEES_DB.get(`order:${i}`, "json");
-          if (order && order.status === "COMPLETED") {
-            await env.HONEYDEES_DB.delete(`order:${i}`);
+        for (const id of index) {
+          const order = await env.HONEYDEES_DB.get(`order:${id}`, "json");
+          if (order && (order.status === "COMPLETED" || order.status === "CANCELLED")) {
+            await env.HONEYDEES_DB.delete(`order:${id}`);
             await env.HONEYDEES_DB.delete(`track:${order.trackingToken}`);
           } else {
-            newIndex.push(i);
+            newIndex.push(id);
           }
         }
         await env.HONEYDEES_DB.put("index:orders", JSON.stringify(newIndex));
@@ -190,4 +197,4 @@ function jsonResponse(data, status = 200) {
     status,
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
   });
-          }
+    }
