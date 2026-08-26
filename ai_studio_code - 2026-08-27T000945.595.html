@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Honeydees Menu</title>
+  <link rel="manifest" href="/manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root { --gold: #c59b27; --ivory: #faf8f5; }
+    body { background-color: var(--ivory); font-family: 'Plus Jakarta Sans', sans-serif; }
+    .serif { font-family: 'Playfair Display', serif; }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col justify-between">
+
+  <div id="errorBanner" class="hidden bg-rose-700 text-white p-3 text-center text-xs font-bold shadow-md sticky top-0 z-50"></div>
+
+  <div id="activeOrderBanner" class="hidden bg-[#c59b27] text-white px-4 py-2.5 text-xs font-bold shadow flex justify-between items-center sticky top-0 z-40">
+    <div class="flex items-center gap-2"><span class="animate-pulse">📦</span><span id="activeOrderText">Active Orders</span></div>
+    <a href="/order" class="bg-slate-900 hover:bg-black text-white px-3 py-1 rounded-lg text-[11px] shadow">Track Status →</a>
+  </div>
+
+  <nav class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-stone-200">
+    <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="location.href='/'">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c59b27] to-amber-600 flex items-center justify-center text-white font-bold text-lg shadow">H</div>
+        <div>
+          <h1 class="serif text-xl font-bold text-slate-900 leading-tight" id="navBrandName">Honeydees</h1>
+          <span class="text-[10px] font-bold tracking-widest text-amber-700 uppercase bg-amber-50 px-2 py-0.5 rounded border border-amber-200" id="navHalalBadge">Halal</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a href="/order" class="p-2.5 text-slate-600 hover:text-slate-900 text-xs font-bold border rounded-xl bg-white shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> <span class="hidden sm:inline">Track</span></a>
+        <a href="/admin" class="p-2.5 text-slate-400 hover:text-slate-700 text-xs border rounded-xl bg-white shadow-sm"><i class="fa-solid fa-gear"></i></a>
+        <button onclick="toggleCart()" class="px-4 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow flex items-center gap-2"><i class="fa-solid fa-bag-shopping text-[#c59b27]"></i><span id="cartBadge" class="bg-[#c59b27] text-white px-2 py-0.5 rounded-full text-[10px] font-black">0</span></button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="py-8 px-4 text-center border-b border-stone-200 bg-gradient-to-b from-amber-50/60 to-transparent">
+    <div class="max-w-xl mx-auto space-y-2">
+      <h2 id="heroHeadingEl" class="serif text-3xl font-extrabold text-slate-900">Friday Treat</h2>
+      <p id="heroSubtitleEl" class="text-xs text-slate-600">Premium food ordering.</p>
+      <div class="inline-flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-full text-xs font-bold border border-amber-200 shadow-sm text-slate-700 mt-2">
+        <span class="text-[#c59b27]"><i class="fa-solid fa-clock"></i></span><span id="scheduleNoticeEl">Collection Times</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
+    <div id="categoryTabs" class="flex gap-2 overflow-x-auto pb-3 scrollbar-hide"></div>
+    <div id="menuGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4"></div>
+  </main>
+
+  <div id="cartBackdrop" onclick="toggleCart()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden"></div>
+  <aside id="cartDrawer" class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white z-50 shadow-2xl flex flex-col transform translate-x-full transition duration-300">
+    <div class="p-4 border-b flex justify-between items-center bg-stone-50">
+      <h3 class="font-bold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-bag-shopping text-[#c59b27]"></i> Your Order</h3>
+      <button onclick="toggleCart()" class="text-slate-400 text-xl font-bold p-1">×</button>
+    </div>
+    <div id="cartItemsList" class="p-4 flex-grow overflow-y-auto space-y-3"></div>
+    <div class="p-4 border-t bg-stone-50 space-y-3">
+      <div class="flex justify-between items-center text-sm font-bold text-slate-600"><span>Subtotal:</span><span id="cartSubtotal" class="text-slate-900 text-base">R 0.00</span></div>
+      <button onclick="openCheckoutModal()" id="checkoutBtn" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl shadow hover:bg-black transition">Proceed to Checkout →</button>
+    </div>
+  </aside>
+
+  <div id="checkoutModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white max-w-lg w-full rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="serif text-xl font-bold text-slate-900">Checkout Details</h3>
+        <button onclick="closeCheckoutModal()" class="text-xl font-bold text-slate-400">×</button>
+      </div>
+      <form onsubmit="submitOrder(event)" class="space-y-3 text-xs">
+        <div><label class="font-bold block mb-1">Full Name *</label><input type="text" id="custName" required class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
+        <div><label class="font-bold block mb-1">WhatsApp / Mobile *</label><input type="tel" id="custPhone" required class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
+        <div><label class="font-bold block mb-1">Fulfilment Type *</label>
+          <select id="custOrderType" onchange="toggleDeliveryFields()" class="w-full p-2.5 border rounded-xl bg-white text-xs font-bold">
+            <option value="COLLECTION">Collection</option>
+            <option value="DELIVERY">Delivery (+Fee)</option>
+          </select>
+        </div>
+        <div id="deliveryBox" class="hidden">
+          <label class="font-bold text-rose-900 block mb-1">Delivery Address *</label>
+          <textarea id="custDeliveryAddress" rows="2" class="w-full p-2.5 border border-rose-300 rounded-xl bg-rose-50/40 text-xs"></textarea>
+        </div>
+        <div class="p-3.5 bg-amber-50 border-2 border-amber-200 rounded-xl space-y-1.5 text-center">
+          <p class="font-bold text-amber-900 text-sm">Order First, Pay Next</p>
+          <p class="text-amber-800 text-[11px] leading-relaxed">Place your order to generate your unique <strong>HNY payment reference</strong>. You will upload your proof of payment on the next screen.</p>
+        </div>
+        <p id="checkoutError" class="text-rose-600 font-bold hidden"></p>
+        <button type="submit" id="placeOrderBtn" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl text-xs shadow transition">Place Order →</button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="border-t border-stone-200 bg-white py-4 text-center text-[11px] text-slate-500"><p>© Honeydees Halal Kitchen</p></footer>
+
+  <script>
+    let appData = { menu: [], categories: [], settings: {} };
+    let cart = []; let activeCategory = "ALL";
+    
+    function esc(s) { return String(s||'').replace(/[&<>'"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m])); }
+
+    function showError(msg) {
+      const b = document.getElementById("errorBanner");
+      b.innerText = msg; b.classList.remove("hidden");
+      setTimeout(()=>b.classList.add("hidden"), 5000);
+    }
+
+    async function init() {
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+      let ts = JSON.parse(localStorage.getItem("hd_tokens") || "[]");
+      if (ts.length > 0) {
+        document.getElementById("activeOrderText").innerText = ts.length + " Active Order" + (ts.length > 1 ? "s" : "");
+        document.getElementById("activeOrderLink").href = "/order?track=" + encodeURIComponent(ts[0].token);
+        document.getElementById("activeOrderBanner").classList.remove("hidden");
+      }
+
+      try {
+        const res = await fetch("/api/data");
+        if(!res.ok) throw new Error("Failed to load menu");
+        appData = (await res.json()).public || {};
+      } catch(e) {
+        showError("Could not load the menu. Please check your connection.");
+      }
+
+      const s = appData.settings || {};
+      if (s.businessName) document.getElementById("navBrandName").innerHTML = esc(s.businessName);
+      if (s.halalBadge) document.getElementById("navHalalBadge").innerHTML = esc(s.halalBadge);
+      if (s.heroHeading) document.getElementById("heroHeadingEl").innerHTML = esc(s.heroHeading);
+      if (s.heroSubtitle) document.getElementById("heroSubtitleEl").innerHTML = esc(s.heroSubtitle);
+      if (s.scheduleNotice) document.getElementById("scheduleNoticeEl").innerHTML = esc(s.scheduleNotice);
+
+      let isClosed = false;
+      if (s.isStoreOpen === false) {
+        isClosed = true;
+      } else if (s.operatingDays) {
+        const d = new Date(); const utc = d.getTime() + (d.getTimezoneOffset() * 60000); const sast = new Date(utc + (3600000 * 2));
+        const currentDay = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"][sast.getDay()];
+        const curH = sast.getHours(); const curM = sast.getMinutes();
+        const curTime = (curH < 10 ? "0"+curH : curH) + ":" + (curM < 10 ? "0"+curM : curM);
+        const opDays = s.operatingDays.toLowerCase();
+        
+        if (!opDays.includes(currentDay) && !opDays.includes("everyday") && !opDays.includes("all")) {
+          isClosed = true;
+        } else if (s.openTime && s.closeTime) {
+          if (curTime < s.openTime || curTime > s.closeTime) isClosed = true;
+        }
+      }
+
+      if (isClosed) {
+        document.getElementById("errorBanner").classList.remove("hidden");
+        document.getElementById("errorBanner").innerHTML = "🔒 " + esc(s.closedNotice || "Store is closed.");
+        document.getElementById("checkoutBtn").disabled = true;
+        document.getElementById("checkoutBtn").innerText = "🔒 Store Closed";
+        document.getElementById("checkoutBtn").className = "w-full py-3.5 bg-slate-400 text-white font-bold rounded-xl cursor-not-allowed";
+      }
+
+      const cEl = document.getElementById("categoryTabs");
+      const cats = [{ id: "ALL", name: "✨ All Menu" }].concat(appData.categories || []);
+      cEl.innerHTML = cats.map(c => `<button onclick="setCategory('${c.id}')" class="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${activeCategory === c.id ? 'bg-slate-900 text-white shadow' : 'bg-white border text-slate-700'}">${esc(c.name)}</button>`).join('');
+      renderMenu();
+    }
+
+    function setCategory(id) { activeCategory = id; init(); }
+
+    function renderMenu() {
+      const g = document.getElementById("menuGrid");
+      const l = activeCategory === "ALL" ? (appData.menu||[]) : (appData.menu||[]).filter(i => i.categoryId === activeCategory);
+      if (!l.length) return g.innerHTML = `<div class="col-span-full text-center py-10 text-xs text-slate-400">No items available.</div>`;
+
+      g.innerHTML = l.map(i => `
+        <div class="bg-white rounded-2xl border overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition">
+          <div class="h-44 relative bg-stone-100">
+            <img src="${i.imageUrl}" class="w-full h-full object-cover">
+            ${i.featured ? '<span class="absolute top-2.5 left-2.5 bg-[#c59b27] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow">Popular</span>' : ''}
+          </div>
+          <div class="p-4 space-y-2 flex-grow flex flex-col justify-between">
+            <div><h4 class="font-bold text-sm">${esc(i.name)}</h4><p class="text-xs text-slate-500 line-clamp-2 mt-0.5">${esc(i.description)}</p></div>
+            <div class="flex justify-between items-center pt-2 border-t">
+              <span class="text-base font-black">R ${Number(i.price || 0).toFixed(2)}</span>
+              <button onclick="addToCart('${i.id}')" class="px-3.5 py-1.5 bg-amber-50 text-[#9e7914] border border-amber-200 rounded-xl font-bold text-xs hover:bg-[#c59b27] hover:text-white">+ Add</button>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+
+    function addToCart(id) {
+      let item = (appData.menu||[]).find(x => x.id === id);
+      if (!item) return;
+      let e = cart.find(c => c.id === id);
+      if (e) { if(e.quantity < 20) e.quantity++; } else cart.push({ ...item, quantity: 1 });
+      updateCart(); toggleCart(true);
+    }
+
+    function updateCart() {
+      const c = document.getElementById("cartItemsList");
+      let sub = 0; let totalCount = 0;
+      cart.forEach(i => { sub += (i.price * i.quantity); totalCount += i.quantity; });
+      document.getElementById("cartBadge").innerText = totalCount;
+      document.getElementById("cartSubtotal").innerText = "R " + sub.toFixed(2);
+      if (!cart.length) return c.innerHTML = `<p class="text-center py-10 text-slate-400">Cart is empty.</p>`;
+
+      c.innerHTML = cart.map(i => `
+        <div class="flex justify-between items-center p-3 bg-stone-50 rounded-xl border text-xs">
+          <div><strong class="block">${esc(i.name)}</strong><span class="text-slate-500">R ${Number(i.price).toFixed(2)} ea</span></div>
+          <div class="flex gap-2 bg-white px-2 py-1 border rounded-lg">
+            <button onclick="changeQty('${i.id}',-1)" class="font-bold px-1 text-slate-500">-</button>
+            <span class="font-bold font-mono">${i.quantity}</span>
+            <button onclick="changeQty('${i.id}',1)" class="font-bold px-1 text-slate-500">+</button>
+          </div>
+        </div>`).join('');
+    }
+
+    function changeQty(id, d) {
+      let e = cart.find(c => c.id === id);
+      if(e) e.quantity = Math.min(20, e.quantity + d);
+      cart = cart.filter(c => c.quantity > 0);
+      updateCart();
+    }
+
+    function toggleCart(f) {
+      const d = document.getElementById("cartDrawer"), b = document.getElementById("cartBackdrop");
+      if (f || d.classList.contains("translate-x-full")) { d.classList.remove("translate-x-full"); b.classList.remove("hidden"); } 
+      else { d.classList.add("translate-x-full"); b.classList.add("hidden"); }
+    }
+
+    function openCheckoutModal() {
+      if (!cart.length) return alert("Your cart is empty.");
+      toggleCart(false);
+      document.getElementById("checkoutError").classList.add("hidden");
+      document.getElementById("checkoutModal").classList.remove("hidden");
+      document.getElementById("checkoutModal").classList.add("flex");
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById("checkoutModal").classList.add("hidden");
+      document.getElementById("checkoutModal").classList.remove("flex");
+    }
+
+    function toggleDeliveryFields() {
+      const isDel = (document.getElementById("custOrderType").value === "DELIVERY");
+      const addrBox = document.getElementById("deliveryBox");
+      const addrInput = document.getElementById("custDeliveryAddress");
+      if (isDel) { addrBox.classList.remove("hidden"); addrInput.required = true; } 
+      else { addrBox.classList.add("hidden"); addrInput.required = false; }
+    }
+
+    async function submitOrder(e) {
+      e.preventDefault();
+      const orderType = document.getElementById("custOrderType").value;
+      const deliveryAddress = document.getElementById("custDeliveryAddress").value.trim();
+      const errEl = document.getElementById("checkoutError");
+      errEl.classList.add("hidden");
+
+      if (orderType === "DELIVERY" && !deliveryAddress) {
+        errEl.innerText = "Please enter your complete delivery address.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+
+      try { if (window.Notification && Notification.permission === "default") Notification.requestPermission().catch(()=>{}); } catch(e){}
+
+      const b = document.getElementById("placeOrderBtn");
+      b.innerText = "Creating Secure Order..."; b.disabled = true;
+
+      try {
+        const r = await fetch("/api/data", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "createOrder",
+            data: {
+              customer: { name: document.getElementById("custName").value.trim(), phone: document.getElementById("custPhone").value.trim() },
+              orderType: orderType, deliveryAddress: deliveryAddress, items: cart
+            }
+          })
+        });
+
+        const d = await r.json();
+        if (r.ok && d.trackingToken) {
+          let ts = JSON.parse(localStorage.getItem("hd_tokens") || "[]");
+          ts.push({ token: d.trackingToken, num: d.orderNumber });
+          localStorage.setItem("hd_tokens", JSON.stringify(ts));
+          window.location.href = "/order?track=" + encodeURIComponent(d.trackingToken);
+        } else {
+          errEl.innerText = d.error || "Order Failed"; errEl.classList.remove("hidden");
+        }
+      } catch (err) {
+        errEl.innerText = "Network error. Please ensure you are connected to the internet."; errEl.classList.remove("hidden");
+      } finally {
+        b.innerText = "Place Order & Get Payment Details →"; b.disabled = false;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
