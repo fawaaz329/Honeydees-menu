@@ -1,60 +1,48 @@
-const CACHE_NAME = "honeydees-v7-perf";
+const CACHE_NAME = "honeydees-v8-push";
 const ASSETS = ["/", "/order", "/admin", "/manifest.json"];
 
-self.addEventListener("install", (e) => {
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => caches.delete(k)))
-    )
-  );
+self.addEventListener("install", e => self.skipWaiting());
+self.addEventListener("activate", e => {
+  e.waitUntil(caches.keys().then(k => Promise.all(k.map(x => caches.delete(x)))));
   self.clients.claim();
 });
 
-self.addEventListener("fetch", (e) => {
-  const url = new URL(e.request.url);
-
-  // APIs always bypass cache for instant real-time data
-  if (url.pathname.startsWith("/api/")) {
-    e.respondWith(fetch(e.request));
+self.addEventListener("fetch", e => {
+  const u = new URL(e.request.url);
+  if (u.pathname.startsWith("/api/")) { e.respondWith(fetch(e.request)); return; }
+  if (e.request.mode === "navigate" || ASSETS.includes(u.pathname)) {
+    e.respondWith(fetch(e.request).then(r => {
+      const rc = r.clone();
+      caches.open(CACHE_NAME).then(c => c.put(e.request, rc));
+      return r;
+    }).catch(() => caches.match(e.request).then(r => r || new Response("Offline", { status: 503 }))));
     return;
   }
-
-  // Network-First for HTML pages so updates are instantaneous
-  if (e.request.mode === "navigate" || ASSETS.includes(url.pathname)) {
-    e.respondWith(
-      fetch(e.request)
-        .then((response) => {
-          const resClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, resClone));
-          return response;
-        })
-        .catch(() => caches.match(e.request).then((res) => res || new Response("Offline", { status: 503 })))
-    );
-    return;
-  }
-
-  e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
 
-// Direct notification clicks to /order for customers or /admin for staff
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const targetUrl = event.notification.data?.url || "/order";
-
-  event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-      for (let client of windowClients) {
-        if (client.url.includes(targetUrl) && "focus" in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
-      }
+// TRUE WEB PUSH BACKGROUND EVENT
+self.addEventListener("push", e => {
+  let d = { title: "Honeydees Update", body: "Tap to view status." };
+  if (e.data) {
+    try { d = e.data.json(); } catch (err) { d.body = e.data.text(); }
+  }
+  e.waitUntil(
+    self.registration.showNotification(d.title, {
+      body: d.body,
+      icon: "https://via.placeholder.com/192x192.png?text=H",
+      badge: "https://via.placeholder.com/192x192.png?text=H",
+      vibrate: [200, 100, 200],
+      data: { url: d.url || "/" }
     })
   );
+});
+
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const t = e.notification.data?.url || "/";
+  e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then(w => {
+    for (let c of w) { if (c.url.includes(t) && "focus" in c) return c.focus(); }
+    if (clients.openWindow) return clients.openWindow(t);
+  }));
 });
