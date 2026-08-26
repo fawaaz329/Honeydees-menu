@@ -20,7 +20,16 @@ const SEED_DATA = {
     { id: "cat_desserts", name: "Desserts & Treats" }
   ],
   menu: [
-    { id: "item_1", name: "Masala Steak Sandwich", description: "Masala steak cutlets, slap chips & fresh salad.", price: 65, categoryId: "cat_mains", imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80", available: true, featured: true }
+    {
+      id: "item_1",
+      name: "Masala Steak Sandwich",
+      description: "Masala steak cutlets, slap chips & fresh salad.",
+      price: 65,
+      categoryId: "cat_mains",
+      imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80",
+      available: true,
+      featured: true
+    }
   ]
 };
 
@@ -58,12 +67,16 @@ export async function onRequest(context) {
 
       if (isAdmin) {
         const index = await env.HONEYDEES_DB.get("index:orders", "json") || [];
-        for (const id of index.slice(0, 150)) {
+        for (const id of index.slice(0, 200)) {
           const od = await env.HONEYDEES_DB.get(`order:${id}`, "json");
           if (od) orders.push(od);
         }
       }
-      return jsonResponse({ authenticated: isAdmin, public: { settings, categories, menu }, orders: isAdmin ? orders : undefined });
+      return jsonResponse({
+        authenticated: isAdmin,
+        public: { settings, categories, menu },
+        orders: isAdmin ? orders : undefined
+      });
     }
 
     if (request.method === "POST") {
@@ -71,7 +84,7 @@ export async function onRequest(context) {
 
       if (body.action === "createOrder") {
         const { customer, orderType, deliveryAddress, items, popBase64 } = body.data;
-        if (!popBase64) return jsonResponse({ error: "POP strictly required." }, 400);
+        if (!popBase64) return jsonResponse({ error: "Proof of Payment is strictly required." }, 400);
 
         const menu = await env.HONEYDEES_DB.get("menu", "json") || SEED_DATA.menu;
         const settings = await env.HONEYDEES_DB.get("settings", "json") || SEED_DATA.settings;
@@ -94,9 +107,17 @@ export async function onRequest(context) {
 
         const newOrder = {
           id: "ord_" + Date.now(),
-          orderNumber, trackingToken, customer, orderType, deliveryAddress: deliveryAddress || "",
-          items: verifiedItems, subtotal, deliveryFee, total,
-          status: "PAYMENT PROOF RECEIVED", popBase64,
+          orderNumber,
+          trackingToken,
+          customer,
+          orderType,
+          deliveryAddress: deliveryAddress || "",
+          items: verifiedItems,
+          subtotal,
+          deliveryFee,
+          total,
+          status: "PAYMENT PROOF RECEIVED",
+          popBase64,
           createdAt: new Date().toLocaleDateString("en-GB") + " " + new Date().toLocaleTimeString("en-GB")
         };
 
@@ -112,7 +133,7 @@ export async function onRequest(context) {
 
       if (body.action === "uploadLatePOP") {
         const { trackingToken, popBase64 } = body.data;
-        if (!popBase64) return jsonResponse({ error: "No file" }, 400);
+        if (!popBase64) return jsonResponse({ error: "No file provided" }, 400);
         const orderId = await env.HONEYDEES_DB.get(`track:${trackingToken}`);
         if (!orderId) return jsonResponse({ error: "Not found" }, 404);
         
@@ -169,4 +190,4 @@ function jsonResponse(data, status = 200) {
     status,
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
   });
-                                         }
+          }
