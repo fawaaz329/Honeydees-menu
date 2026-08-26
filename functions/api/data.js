@@ -95,7 +95,6 @@ export async function onRequest(context) {
 
         const { customer, orderType, deliveryAddress, items, popBase64 } = body.data;
 
-        // STRICT VALIDATION: Proof of payment + Delivery address
         if (!popBase64) return jsonResponse({ error: "Proof of Payment is strictly required." }, 400);
         if (orderType === "DELIVERY" && (!deliveryAddress || !deliveryAddress.trim())) {
           return jsonResponse({ error: "Delivery address is required for delivery orders." }, 400);
@@ -145,6 +144,19 @@ export async function onRequest(context) {
         return jsonResponse({ success: true, trackingToken, orderNumber, total });
       }
 
+      if (body.action === "uploadLatePOP") {
+        const { trackingToken, popBase64 } = body.data;
+        if (!popBase64) return jsonResponse({ error: "No file provided" }, 400);
+        const orderId = await env.HONEYDEES_DB.get(`track:${trackingToken}`);
+        if (!orderId) return jsonResponse({ error: "Not found" }, 404);
+        
+        const order = await env.HONEYDEES_DB.get(`order:${orderId}`, "json");
+        order.popBase64 = popBase64;
+        order.status = "PAYMENT PROOF RECEIVED";
+        await env.HONEYDEES_DB.put(`order:${orderId}`, JSON.stringify(order));
+        return jsonResponse({ success: true });
+      }
+
       if (!isAdmin) return jsonResponse({ error: "Unauthorized" }, 401);
 
       if (body.action === "updateOrderStatus") {
@@ -156,7 +168,6 @@ export async function onRequest(context) {
         return jsonResponse({ success: true });
       }
 
-      // Purge all completed orders, photos, and tracking tokens
       if (body.action === "clearCompletedOrders") {
         let index = await env.HONEYDEES_DB.get("index:orders", "json") || [];
         let newIndex = [];
@@ -173,7 +184,6 @@ export async function onRequest(context) {
         return jsonResponse({ success: true });
       }
 
-      // Wipe sales records (archives all active orders as completed and purges)
       if (body.action === "resetSalesData") {
         let index = await env.HONEYDEES_DB.get("index:orders", "json") || [];
         for (const id of index) {
@@ -206,4 +216,4 @@ function jsonResponse(data, status = 200) {
     status,
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
   });
-    }
+          }
