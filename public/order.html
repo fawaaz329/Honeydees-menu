@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Honeydees | Track</title>
+  <title>Honeydees | Track Orders</title>
   <link rel="manifest" href="/manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -14,23 +14,56 @@
   
   <div class="max-w-md w-full bg-white rounded-3xl border shadow-xl p-6 space-y-5">
     <div class="flex justify-between items-center border-b pb-3">
-      <a href="/" class="text-xs font-bold text-slate-500">← Menu</a>
-      <span class="text-xs font-bold text-[#c59b27]">Tracker</span>
+      <a href="/" class="text-xs font-bold text-slate-500 hover:text-slate-900">← Back to Menu</a>
+      <span class="text-xs font-bold text-[#c59b27]">Live Order Tracker</span>
     </div>
     
+    <!-- NOTIFICATION PERMISSION PROMPT -->
+    <div id="notifyPrompt" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs space-y-1">
+      <p class="font-bold text-amber-900">🔔 Enable lockscreen ready alerts?</p>
+      <button onclick="requestAlerts()" class="px-3 py-1 bg-amber-600 text-white rounded-lg font-bold text-[11px]">Enable Notifications</button>
+    </div>
+
     <div id="readyBanner" class="hidden p-4 bg-emerald-50 border-2 border-emerald-500 rounded-2xl text-center animate-pulse">
-      <h3 class="font-extrabold text-emerald-900 text-sm">READY!</h3>
-      <p class="text-xs">Collect at 14 Viola St</p>
+      <span class="text-2xl">🎉</span>
+      <h3 class="font-extrabold text-emerald-900 text-sm">YOUR ORDER IS READY!</h3>
+      <p class="text-xs text-emerald-700">Please collect at <strong>14 Viola Street, Lentegeur</strong>.</p>
     </div>
     
-    <!-- All active orders will render in this container -->
     <div id="oCont" class="space-y-6"></div>
   </div>
 
   <script>
     let cS = {};
-    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-      Notification.requestPermission();
+
+    function checkNotify() {
+      if ("Notification" in window && Notification.permission === "default") {
+        document.getElementById("notifyPrompt").classList.remove("hidden");
+      }
+    }
+
+    async function requestAlerts() {
+      if ("Notification" in window) {
+        const p = await Notification.requestPermission();
+        if (p === "granted") {
+          document.getElementById("notifyPrompt").classList.add("hidden");
+        }
+      }
+    }
+
+    function triggerNativeNotification(title, body) {
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      if ("Notification" in window && Notification.permission === "granted") {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(title, {
+              body,
+              icon: "https://via.placeholder.com/192x192.png?text=H",
+              badge: "https://via.placeholder.com/192x192.png?text=H"
+            });
+          });
+        }
+      }
     }
 
     async function loadOrders() {
@@ -44,8 +77,8 @@
       if (!ts.length) {
         document.getElementById("oCont").innerHTML = `
           <div class="text-center py-6">
-            <p class="text-xs text-slate-400 mb-3">No active orders.</p>
-            <a href="/" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Menu</a>
+            <p class="text-xs text-slate-400 mb-3">No active orders found.</p>
+            <a href="/" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Browse Menu</a>
           </div>`;
         return;
       }
@@ -59,17 +92,14 @@
           if (r.ok) {
             const d = await r.json();
             
-            // Push Notification & Vibrate on READY
+            // Trigger Phone Alert if changed to READY
             if (d.status === 'READY' && cS[d.trackingToken] !== 'READY') {
               document.getElementById("readyBanner").classList.remove("hidden");
-              if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-              if (Notification.permission === "granted") {
-                new Notification("Ready!", { body: `Order ${d.orderNumber} is ready.`, icon: "https://via.placeholder.com/192.png" });
-              }
+              triggerNativeNotification("Honeydees Order Ready!", `Your order #${d.orderNumber} is freshly packed!`);
             }
             cS[d.trackingToken] = d.status;
 
-            // Only keep if not Completed/Cancelled
+            // Only keep in customer active list if not COMPLETED or CANCELLED
             if (d.status !== 'COMPLETED' && d.status !== 'CANCELLED') {
               activeTokens.push(t);
               const pillClass = d.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
@@ -83,21 +113,21 @@
                   <div class="text-xs text-slate-700 space-y-1">
                     <div class="flex justify-between"><span>Type:</span><strong>${d.orderType}</strong></div>
                     ${d.orderType === 'DELIVERY' ? `<div class="flex justify-between"><span>Addr:</span><strong>${d.deliveryAddress}</strong></div>` : ''}
-                    <div class="flex justify-between mt-2 pt-2 border-t"><span>Total:</span><strong class="font-mono text-sm">R ${Number(d.total).toFixed(2)}</strong></div>
+                    <div class="flex justify-between mt-2 pt-2 border-t font-bold"><span>Total:</span><strong class="font-mono text-sm text-slate-900">R ${Number(d.total).toFixed(2)}</strong></div>
                   </div>
                 </div>`;
             }
           }
-        } catch (e) { console.error("Error fetching order", e); }
+        } catch (e) { console.error(e); }
       }
 
-      // Automatically wipe completed orders from memory
+      // Auto-wipes completed orders from customer phone memory
       localStorage.setItem("hd_tokens", JSON.stringify(activeTokens));
       
       if (!activeTokens.length) {
         html = `
           <div class="text-center py-6">
-            <p class="text-xs text-slate-400 mb-3">All orders completed!</p>
+            <p class="text-xs text-slate-400 mb-3">All your orders have been completed!</p>
             <a href="/" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Order Again</a>
           </div>`;
       }
@@ -106,6 +136,7 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
+      checkNotify();
       loadOrders();
       setInterval(loadOrders, 10000);
     });
