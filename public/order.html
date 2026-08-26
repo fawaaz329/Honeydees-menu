@@ -57,15 +57,100 @@
       }
     }
 
-    async function loadOrders() {
-      // 🛡️ CRITICAL FIX: If user has a file selected right now, DO NOT wipe the screen!
-      const allFileInputs = document.querySelectorAll('input[type="file"]');
-      for (let f = 0; f < allFileInputs.length; f++) {
-        if (allFileInputs[f].files && allFileInputs[f].files.length > 0) {
-          return; // Skip screen refresh while user is preparing to upload
+    function updateOrCreateCard(d) {
+      const container = document.getElementById("oCont");
+      let card = document.getElementById("orderCard_" + d.trackingToken);
+
+      // SURGICAL CHECK: If card exists and status has NOT changed, DO NOT TOUCH IT!
+      if (card && card.getAttribute("data-status") === d.status) {
+        return;
+      }
+
+      const isNew = !card;
+      if (isNew) {
+        card = document.createElement("div");
+        card.id = "orderCard_" + d.trackingToken;
+        card.className = "p-4 border border-stone-200 rounded-2xl shadow-sm bg-white mb-6";
+        container.appendChild(card);
+      }
+
+      card.setAttribute("data-status", d.status);
+
+      let pillClass = "bg-amber-100 text-amber-800";
+      let statusLabel = d.status;
+      if (d.status === "READY") {
+        pillClass = (d.orderType === "DELIVERY") ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800";
+        statusLabel = (d.orderType === "DELIVERY") ? "ON ITS WAY" : "READY TO COLLECT";
+      } else if (d.status === "PAYMENT VERIFIED") {
+        pillClass = "bg-emerald-100 text-emerald-800";
+      }
+
+      let itemsHtml = "";
+      if (d.items && d.items.length) {
+        for (let x = 0; x < d.items.length; x++) {
+          const itm = d.items[x];
+          itemsHtml += "<div class=\"flex justify-between py-1\"><span>" + itm.quantity + "x " + itm.name + "</span><strong class=\"font-mono\">R " + Number(itm.lineTotal || 0).toFixed(2) + "</strong></div>";
         }
       }
 
+      const s = d.settings || {};
+
+      let html = 
+        "<div class=\"flex justify-between items-center border-b pb-2 mb-2\">" +
+          "<h2 class=\"text-xl font-black font-mono text-slate-900\">" + d.orderNumber + "</h2>" +
+          "<span class=\"px-3 py-1 rounded-full text-[10px] font-black uppercase " + pillClass + "\">" + statusLabel + "</span>" +
+        "</div>";
+
+      if (d.status === "AWAITING PAYMENT") {
+        html += 
+          "<div class=\"bg-amber-50 border-2 border-amber-200 p-4 rounded-xl text-center space-y-2 mb-3\">" +
+            "<h4 class=\"font-extrabold text-amber-900 text-sm\">Action Required: Make Payment</h4>" +
+            "<p class=\"text-xs text-amber-800\">Please EFT <strong class=\"font-black text-lg\">R " + Number(d.total || 0).toFixed(2) + "</strong> to confirm your order.</p>" +
+            "<div class=\"bg-white p-2.5 rounded-lg text-left text-xs border border-amber-200 space-y-1\">" +
+              "<div class=\"flex justify-between\"><span>Bank:</span><strong>" + (s.bankName || "Standard Bank") + "</strong></div>" +
+              "<div class=\"flex justify-between\"><span>Account:</span><strong class=\"font-mono\">" + (s.accountNumber || "") + "</strong></div>" +
+              "<div class=\"flex justify-between\"><span>Branch Code:</span><strong class=\"font-mono\">" + (s.branchCode || "") + "</strong></div>" +
+              "<div class=\"flex justify-between text-amber-900 pt-1 border-t border-amber-100 font-bold\"><span>Payment Reference:</span><strong class=\"font-mono text-sm\">" + d.orderNumber + "</strong></div>" +
+            "</div>" +
+          "</div>" +
+          "<div class=\"p-3 bg-stone-50 border rounded-xl space-y-2\">" +
+            "<label class=\"font-bold text-slate-700 text-xs block\"><i class=\"fa-solid fa-receipt mr-1 text-[#c59b27]\"></i> Upload Proof of Payment (POP)</label>" +
+            "<input type=\"file\" id=\"latePopFile_" + d.trackingToken + "\" onchange=\"onFileSelected('" + d.trackingToken + "')\" accept=\"image/*,application/pdf\" class=\"w-full p-2 bg-white border rounded-lg text-xs\">" +
+            "<div id=\"fileBadge_" + d.trackingToken + "\" class=\"hidden text-emerald-700 font-bold text-xs bg-emerald-50 p-2 rounded-lg border border-emerald-200\"></div>" +
+            "<button onclick=\"uploadLatePop('" + d.trackingToken + "')\" id=\"btn_" + d.trackingToken + "\" class=\"w-full py-2.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow transition\">Upload & Submit for Review</button>" +
+          "</div>";
+      } else if (d.status === "PAYMENT UNDER REVIEW") {
+        html += 
+          "<div class=\"bg-blue-50 border-2 border-blue-200 p-4 rounded-xl text-center space-y-2 mb-3\">" +
+            "<i class=\"fa-solid fa-clock-rotate-left text-2xl text-blue-500\"></i>" +
+            "<h4 class=\"font-extrabold text-blue-900 text-sm\">Proof Received & Under Review</h4>" +
+            "<p class=\"text-xs text-blue-800 leading-relaxed\">Your payment proof has been submitted for review. Your order is <strong class=\"uppercase underline\">not</strong> confirmed until payment has been verified by the kitchen. Please wait for your order status to change to <strong>Payment Confirmed</strong>.</p>" +
+          "</div>";
+      } else if (d.status === "PAYMENT REJECTED") {
+        html += 
+          "<div class=\"bg-rose-50 border-2 border-rose-400 p-4 rounded-xl text-center space-y-2 mb-3\">" +
+            "<i class=\"fa-solid fa-triangle-exclamation text-2xl text-rose-600\"></i>" +
+            "<h4 class=\"font-extrabold text-rose-900 text-sm\">Payment Unverified / Rejected</h4>" +
+            "<p class=\"text-xs text-rose-800\">We could not verify your payment in our bank account. Please re-upload a valid proof of payment receipt.</p>" +
+            "<input type=\"file\" id=\"latePopFile_" + d.trackingToken + "\" onchange=\"onFileSelected('" + d.trackingToken + "')\" accept=\"image/*,application/pdf\" class=\"w-full p-2 bg-white border border-rose-300 rounded-lg text-xs mt-2\">" +
+            "<div id=\"fileBadge_" + d.trackingToken + "\" class=\"hidden text-emerald-700 font-bold text-xs bg-emerald-50 p-2 rounded-lg border border-emerald-200\"></div>" +
+            "<button onclick=\"uploadLatePop('" + d.trackingToken + "')\" id=\"btn_" + d.trackingToken + "\" class=\"w-full py-2.5 bg-rose-700 text-white font-bold rounded-xl text-xs shadow mt-2\">Re-Upload Receipt</button>" +
+          "</div>";
+      }
+
+      html += 
+          "<div class=\"text-xs text-slate-700 space-y-1 mt-3 pt-3 border-t\">" +
+            "<div class=\"flex justify-between\"><span>Fulfilment:</span><strong>" + d.orderType + "</strong></div>" +
+            (d.orderType === "DELIVERY" 
+              ? "<div class=\"flex justify-between\"><span>Delivery Address:</span><strong>" + d.deliveryAddress + "</strong></div>" 
+              : "<div class=\"flex justify-between\"><span>Collection Address:</span><strong>14 Viola St, Lentegeur</strong></div>") +
+            "<div class=\"flex justify-between mt-2 pt-2 border-t font-bold\"><span>Total Order Amount:</span><strong class=\"font-mono text-sm text-slate-900\">R " + Number(d.total || 0).toFixed(2) + "</strong></div>" +
+          "</div>";
+
+      card.innerHTML = html;
+    }
+
+    async function loadOrders() {
       let ts = JSON.parse(localStorage.getItem("hd_tokens") || "[]");
       let q = new URLSearchParams(window.location.search).get("track");
       
@@ -77,14 +162,15 @@
         ts.push({ token: q });
       }
 
+      const container = document.getElementById("oCont");
+
       if (!ts.length) {
-        document.getElementById("oCont").innerHTML = 
+        container.innerHTML = 
           "<div class=\"text-center py-6\"><p class=\"text-xs text-slate-400 mb-3\">No active orders found.</p><a href=\"/\" class=\"px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs\">Browse Menu</a></div>";
         return;
       }
 
-      let preservedTokens = [];
-      let html = "";
+      let activeTokens = [];
 
       for (let i = 0; i < ts.length; i++) {
         const t = ts[i];
@@ -95,7 +181,7 @@
             const d = JSON.parse(text);
 
             if (d && d.orderNumber) {
-              if (cS[d.trackingToken] !== d.status) {
+              if (cS[d.trackingToken] && cS[d.trackingToken] !== d.status) {
                 const oNum = d.orderNumber || "";
 
                 if (d.status === "PREPARING") {
@@ -105,7 +191,7 @@
                     showHeroBanner("🚚", "YOUR ORDER IS ON ITS WAY!", "Our driver is en route with your fresh meal.", "bg-sky-50 border-2 border-sky-500 text-sky-900");
                     triggerNativeNotification("Honeydees Delivery!", "🚚 Order #" + oNum + " is on its way to you!");
                   } else {
-                    showHeroBanner("🎉", "YOUR ORDER IS READY FOR COLLECTION!", "Please collect at 14 Viola Street, Lentegeur.", "bg-emerald-50 border-2 border-emerald-500 text-emerald-900");
+                    showHeroBanner("🎉", "YOUR ORDER IS READY FOR COLLECTION!", "Please collect at 14 Viola Street.", "bg-emerald-50 border-2 border-emerald-500 text-emerald-900");
                     triggerNativeNotification("Honeydees Order Ready!", "🎉 Order #" + oNum + " is ready for collection!");
                   }
                 }
@@ -113,96 +199,26 @@
               cS[d.trackingToken] = d.status;
 
               if (d.status !== "COMPLETED" && d.status !== "CANCELLED") {
-                preservedTokens.push(t);
-
-                let pillClass = "bg-amber-100 text-amber-800";
-                let statusLabel = d.status;
-                if (d.status === "READY") {
-                  pillClass = (d.orderType === "DELIVERY") ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800";
-                  statusLabel = (d.orderType === "DELIVERY") ? "ON ITS WAY" : "READY TO COLLECT";
-                } else if (d.status === "PAYMENT VERIFIED") {
-                  pillClass = "bg-emerald-100 text-emerald-800";
-                }
-
-                let itemsHtml = "";
-                if (d.items && d.items.length) {
-                  for (let x = 0; x < d.items.length; x++) {
-                    const itm = d.items[x];
-                    itemsHtml += "<div class=\"flex justify-between py-1\"><span>" + itm.quantity + "x " + itm.name + "</span><strong class=\"font-mono\">R " + Number(itm.lineTotal || 0).toFixed(2) + "</strong></div>";
-                  }
-                }
-
-                const s = d.settings || {};
-
-                html += 
-                  "<div class=\"p-4 border border-stone-200 rounded-2xl shadow-sm bg-white mb-6\">" +
-                    "<div class=\"flex justify-between items-center border-b pb-2 mb-2\">" +
-                      "<h2 class=\"text-xl font-black font-mono text-slate-900\">" + d.orderNumber + "</h2>" +
-                      "<span class=\"px-3 py-1 rounded-full text-[10px] font-black uppercase " + pillClass + "\">" + statusLabel + "</span>" +
-                    "</div>";
-
-                if (d.status === "AWAITING PAYMENT") {
-                  html += 
-                    "<div class=\"bg-amber-50 border-2 border-amber-200 p-4 rounded-xl text-center space-y-2 mb-3\">" +
-                      "<h4 class=\"font-extrabold text-amber-900 text-sm\">Action Required: Make Payment</h4>" +
-                      "<p class=\"text-xs text-amber-800\">Please EFT <strong class=\"font-black text-lg\">R " + Number(d.total || 0).toFixed(2) + "</strong> to confirm your order.</p>" +
-                      "<div class=\"bg-white p-2.5 rounded-lg text-left text-xs border border-amber-200 space-y-1\">" +
-                        "<div class=\"flex justify-between\"><span>Bank:</span><strong>" + (s.bankName || "Standard Bank") + "</strong></div>" +
-                        "<div class=\"flex justify-between\"><span>Account:</span><strong class=\"font-mono\">" + (s.accountNumber || "") + "</strong></div>" +
-                        "<div class=\"flex justify-between\"><span>Branch Code:</span><strong class=\"font-mono\">" + (s.branchCode || "") + "</strong></div>" +
-                        "<div class=\"flex justify-between text-amber-900 pt-1 border-t border-amber-100 font-bold\"><span>Payment Reference:</span><strong class=\"font-mono text-sm\">" + d.orderNumber + "</strong></div>" +
-                      "</div>" +
-                    "</div>" +
-                    "<div class=\"p-3 bg-stone-50 border rounded-xl space-y-2\">" +
-                      "<label class=\"font-bold text-slate-700 text-xs block\"><i class=\"fa-solid fa-receipt mr-1 text-[#c59b27]\"></i> Upload Proof of Payment (POP)</label>" +
-                      "<input type=\"file\" id=\"latePopFile_" + d.trackingToken + "\" onchange=\"onFileSelected('" + d.trackingToken + "')\" accept=\"image/*,application/pdf\" class=\"w-full p-2 bg-white border rounded-lg text-xs\">" +
-                      "<div id=\"fileBadge_" + d.trackingToken + "\" class=\"hidden text-emerald-700 font-bold text-xs bg-emerald-50 p-2 rounded-lg border border-emerald-200\"></div>" +
-                      "<button onclick=\"uploadLatePop('" + d.trackingToken + "')\" id=\"btn_" + d.trackingToken + "\" class=\"w-full py-2.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow transition\">Upload & Submit for Review</button>" +
-                    "</div>";
-                } else if (d.status === "PAYMENT UNDER REVIEW") {
-                  html += 
-                    "<div class=\"bg-blue-50 border-2 border-blue-200 p-4 rounded-xl text-center space-y-2 mb-3\">" +
-                      "<i class=\"fa-solid fa-clock-rotate-left text-2xl text-blue-500\"></i>" +
-                      "<h4 class=\"font-extrabold text-blue-900 text-sm\">Proof Received & Under Review</h4>" +
-                      "<p class=\"text-xs text-blue-800 leading-relaxed\">Your payment proof has been submitted for review. Your order is <strong class=\"uppercase underline\">not</strong> confirmed until payment has been verified by the kitchen. Please wait for your order status to change to <strong>Payment Confirmed</strong>.</p>" +
-                    "</div>";
-                } else if (d.status === "PAYMENT REJECTED") {
-                  html += 
-                    "<div class=\"bg-rose-50 border-2 border-rose-400 p-4 rounded-xl text-center space-y-2 mb-3\">" +
-                      "<i class=\"fa-solid fa-triangle-exclamation text-2xl text-rose-600\"></i>" +
-                      "<h4 class=\"font-extrabold text-rose-900 text-sm\">Payment Unverified / Rejected</h4>" +
-                      "<p class=\"text-xs text-rose-800\">We could not verify your payment in our bank account. Please re-upload a valid proof of payment receipt.</p>" +
-                      "<input type=\"file\" id=\"latePopFile_" + d.trackingToken + "\" onchange=\"onFileSelected('" + d.trackingToken + "')\" accept=\"image/*,application/pdf\" class=\"w-full p-2 bg-white border border-rose-300 rounded-lg text-xs mt-2\">" +
-                      "<div id=\"fileBadge_" + d.trackingToken + "\" class=\"hidden text-emerald-700 font-bold text-xs bg-emerald-50 p-2 rounded-lg border border-emerald-200\"></div>" +
-                      "<button onclick=\"uploadLatePop('" + d.trackingToken + "')\" id=\"btn_" + d.trackingToken + "\" class=\"w-full py-2.5 bg-rose-700 text-white font-bold rounded-xl text-xs shadow mt-2\">Re-Upload Receipt</button>" +
-                    "</div>";
-                }
-
-                html += 
-                    "<div class=\"text-xs text-slate-700 space-y-1 mt-3 pt-3 border-t\">" +
-                      "<div class=\"flex justify-between\"><span>Fulfilment:</span><strong>" + d.orderType + "</strong></div>" +
-                      (d.orderType === "DELIVERY" 
-                        ? "<div class=\"flex justify-between\"><span>Delivery Address:</span><strong>" + d.deliveryAddress + "</strong></div>" 
-                        : "<div class=\"flex justify-between\"><span>Collection Address:</span><strong>14 Viola St, Lentegeur</strong></div>") +
-                      "<div class=\"flex justify-between mt-2 pt-2 border-t font-bold\"><span>Total Order Amount:</span><strong class=\"font-mono text-sm text-slate-900\">R " + Number(d.total || 0).toFixed(2) + "</strong></div>" +
-                    "</div>" +
-                  "</div>";
+                activeTokens.push(t);
+                updateOrCreateCard(d);
+              } else {
+                const existingCard = document.getElementById("orderCard_" + d.trackingToken);
+                if (existingCard) existingCard.remove();
               }
             }
           } else if (r.status !== 404) {
-            preservedTokens.push(t);
+            activeTokens.push(t);
           }
         } catch (e) {
-          preservedTokens.push(t);
+          activeTokens.push(t);
         }
       }
 
-      localStorage.setItem("hd_tokens", JSON.stringify(preservedTokens));
+      localStorage.setItem("hd_tokens", JSON.stringify(activeTokens));
 
-      if (!preservedTokens.length && !html) {
-        html = "<div class=\"text-center py-6\"><p class=\"text-xs text-slate-400 mb-3\">All your orders have been completed!</p><a href=\"/\" class=\"px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs\">Order Again</a></div>";
+      if (!activeTokens.length && !container.children.length) {
+        container.innerHTML = "<div class=\"text-center py-6\"><p class=\"text-xs text-slate-400 mb-3\">All your orders have been completed!</p><a href=\"/\" class=\"px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs\">Order Again</a></div>";
       }
-      document.getElementById("oCont").innerHTML = html;
     }
 
     function showHeroBanner(icon, title, sub, classes) {
