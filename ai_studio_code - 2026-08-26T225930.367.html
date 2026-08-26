@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Honeydees Menu | Halal Friday Feast</title>
+  <link rel="manifest" href="/manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root { --gold: #c59b27; --gold-dark: #9e7914; --ivory: #faf8f5; }
+    body { background-color: var(--ivory); font-family: 'Plus Jakarta Sans', sans-serif; }
+    .serif { font-family: 'Playfair Display', serif; }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col justify-between">
+
+  <!-- STORE CLOSED BANNER -->
+  <div id="storeClosedBanner" class="hidden bg-rose-700 text-white p-3 text-center text-xs font-bold shadow-md sticky top-0 z-50">
+    🔒 <span id="closedNoticeText">We are currently closed for orders.</span>
+  </div>
+
+  <!-- ACTIVE ORDERS MULTI-BANNER -->
+  <div id="activeOrderBanner" class="hidden bg-[#c59b27] text-white px-4 py-2.5 text-xs font-bold shadow flex justify-between items-center sticky top-0 z-40">
+    <div class="flex items-center gap-2">
+      <span class="animate-pulse">📦</span>
+      <span id="activeOrderText">Active Orders</span>
+    </div>
+    <a href="/order" id="activeOrderLink" class="bg-slate-900 hover:bg-black text-white px-3 py-1 rounded-lg text-[11px] shadow">View Live Status →</a>
+  </div>
+
+  <nav class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-stone-200">
+    <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="location.href='/'">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c59b27] to-[#9e7914] flex items-center justify-center text-white font-bold text-lg shadow">H</div>
+        <div>
+          <h1 class="serif text-xl font-bold text-slate-900 leading-tight" id="navBrandName">Honeydees</h1>
+          <span class="text-[10px] font-bold tracking-widest text-[#9e7914] uppercase bg-amber-50 px-2 py-0.5 rounded border border-amber-200" id="navHalalBadge">100% Halal</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a href="/order" class="p-2.5 text-slate-600 hover:text-slate-900 text-xs font-bold border rounded-xl bg-white shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> <span class="hidden sm:inline">Track</span></a>
+        <a href="/admin" class="p-2.5 text-slate-400 hover:text-slate-700 text-xs border rounded-xl bg-white shadow-sm" title="Admin Portal"><i class="fa-solid fa-gear"></i></a>
+        <button onclick="toggleCart()" class="px-4 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow flex items-center gap-2"><i class="fa-solid fa-bag-shopping text-[#c59b27]"></i><span id="cartBadge" class="bg-[#c59b27] text-white px-2 py-0.5 rounded-full text-[10px] font-black">0</span></button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="py-8 px-4 text-center border-b border-stone-200 bg-gradient-to-b from-amber-50/60 to-transparent">
+    <div class="max-w-xl mx-auto space-y-2">
+      <h2 id="heroHeadingEl" class="serif text-3xl font-extrabold text-slate-900">Cape Town's Friday Night Treat</h2>
+      <p id="heroSubtitleEl" class="text-xs text-slate-600">Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.</p>
+      <div class="inline-flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-full text-xs font-bold border border-amber-200 shadow-sm text-slate-700 mt-2">
+        <span class="text-[#c59b27]"><i class="fa-solid fa-clock"></i></span>
+        <span id="scheduleNoticeEl">Collection: 14 Viola St, Lentegeur (From 6:00 PM)</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
+    <div id="categoryTabs" class="flex gap-2 overflow-x-auto pb-3 scrollbar-hide"></div>
+    <div id="menuGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4"></div>
+  </main>
+
+  <div id="cartBackdrop" onclick="toggleCart()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden"></div>
+  <aside id="cartDrawer" class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white z-50 shadow-2xl flex flex-col transform translate-x-full transition duration-300">
+    <div class="p-4 border-b flex justify-between items-center bg-stone-50">
+      <h3 class="font-bold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-bag-shopping text-[#c59b27]"></i> Your Order</h3>
+      <button onclick="toggleCart()" class="text-slate-400 hover:text-slate-700 text-xl font-bold p-1">×</button>
+    </div>
+    <div id="cartItemsList" class="p-4 flex-grow overflow-y-auto space-y-3"></div>
+    <div class="p-4 border-t bg-stone-50 space-y-3">
+      <div class="flex justify-between items-center text-sm font-bold text-slate-600"><span>Subtotal:</span><span id="cartSubtotal" class="text-slate-900 text-base">R 0.00</span></div>
+      <button onclick="openCheckoutModal()" id="checkoutBtn" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl shadow hover:bg-black transition">Proceed to Checkout →</button>
+    </div>
+  </aside>
+
+  <div id="checkoutModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white max-w-lg w-full rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="serif text-xl font-bold text-slate-900">Checkout & Fulfilment</h3>
+        <button onclick="closeCheckoutModal()" class="text-xl font-bold text-slate-400 hover:text-slate-800">×</button>
+      </div>
+      <form onsubmit="submitOrder(event)" class="space-y-3 text-xs">
+        <div><label class="font-bold block mb-1">Your Full Name *</label><input type="text" id="custName" required placeholder="e.g. Fatima Davids" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
+        <div><label class="font-bold block mb-1">WhatsApp / Mobile Number *</label><input type="tel" id="custPhone" required placeholder="e.g. 083 989 7938" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
+        <div><label class="font-bold block mb-1">Fulfilment Type *</label>
+          <select id="custOrderType" onchange="toggleDeliveryFields()" class="w-full p-2.5 border rounded-xl bg-white text-xs font-bold">
+            <option value="COLLECTION">Collection (14 Viola St, Lentegeur - 6 PM)</option>
+            <option value="DELIVERY">Cape Town Local Delivery (+Fee)</option>
+          </select>
+        </div>
+        
+        <div id="deliveryBox" class="hidden">
+          <label class="font-bold text-rose-900 block mb-1">Full Delivery Address *</label>
+          <textarea id="custDeliveryAddress" rows="2" placeholder="Street name, suburb, house/unit number" class="w-full p-2.5 border border-rose-300 rounded-xl bg-rose-50/40 text-xs"></textarea>
+        </div>
+
+        <div class="p-3.5 bg-amber-50 border-2 border-amber-200 rounded-xl space-y-1.5 text-center">
+          <p class="font-bold text-amber-900 text-sm">Secure Bank Transfer (EFT)</p>
+          <p class="text-amber-800 text-[11px] leading-relaxed">
+            On the next screen, you will receive our banking details and a unique <strong>HNY payment reference</strong> to make your transfer and upload proof of payment.
+          </p>
+        </div>
+
+        <button type="submit" id="placeOrderBtn" class="w-full py-3.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow transition">Place Order & Get Payment Details →</button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="border-t border-stone-200 bg-white py-4 text-center text-[11px] text-slate-500"><p>© 2026 Honeydees Halal Kitchen • Cape Town</p></footer>
+
+  <script>
+    let appData = { menu: [], categories: [], settings: {} };
+    let cart = [];
+    let activeCategory = "ALL";
+    let isStoreClosed = false;
+
+    async function init() {
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+      checkActiveOrdersBanner();
+      
+      try {
+        const res = await fetch("/api/data");
+        const json = await res.json();
+        appData = json.public || {};
+      } catch(e){}
+
+      const s = appData.settings || {};
+      
+      if (s.businessName) document.getElementById("navBrandName").innerText = s.businessName;
+      if (s.halalBadge) document.getElementById("navHalalBadge").innerText = s.halalBadge;
+      if (s.heroHeading) document.getElementById("heroHeadingEl").innerText = s.heroHeading;
+      if (s.heroSubtitle) document.getElementById("heroSubtitleEl").innerText = s.heroSubtitle;
+      if (s.scheduleNotice) document.getElementById("scheduleNoticeEl").innerText = s.scheduleNotice;
+
+      if (s.isStoreOpen === false) {
+        isStoreClosed = true;
+      } else {
+        const d = new Date();
+        const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+        const sast = new Date(utc + (3600000 * 2));
+        const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        const currentDay = days[sast.getDay()];
+        const currentH = sast.getHours();
+        const currentM = sast.getMinutes();
+        const currentTimeStr = (currentH < 10 ? "0" + currentH : currentH) + ":" + (currentM < 10 ? "0" + currentM : currentM);
+        const opDays = (s.operatingDays || "Friday").toLowerCase();
+
+        if (!opDays.includes(currentDay) && !opDays.includes("everyday") && !opDays.includes("all")) {
+          isStoreClosed = true;
+        } else if (s.openTime && s.closeTime) {
+          if (currentTimeStr < s.openTime || currentTimeStr > s.closeTime) {
+            isStoreClosed = true;
+          }
+        }
+      }
+
+      if (isStoreClosed) {
+        document.getElementById("storeClosedBanner").classList.remove("hidden");
+        document.getElementById("closedNoticeText").innerText = s.closedNotice || "Store is closed for orders.";
+        document.getElementById("checkoutBtn").disabled = true;
+        document.getElementById("checkoutBtn").innerText = "🔒 Store Currently Closed";
+        document.getElementById("checkoutBtn").className = "w-full py-3.5 bg-slate-400 text-white font-bold rounded-xl cursor-not-allowed";
+      }
+
+      renderCategories();
+      renderMenu();
+    }
+
+    function checkActiveOrdersBanner() {
+      let t = JSON.parse(localStorage.getItem("hd_tokens") || "[]");
+      if (t.length > 0) {
+        document.getElementById("activeOrderText").innerText = t.length + " Active Order" + (t.length > 1 ? "s" : "");
+        document.getElementById("activeOrderLink").href = "/order?track=" + encodeURIComponent(t[0].token);
+        document.getElementById("activeOrderBanner").classList.remove("hidden");
+      }
+    }
+
+    function renderCategories() {
+      const c = document.getElementById("categoryTabs");
+      const baseCats = (appData && appData.categories) ? appData.categories : [];
+      const cats = [{ id: "ALL", name: "✨ All Specials" }].concat(baseCats);
+      
+      let html = "";
+      for (let i = 0; i < cats.length; i++) {
+        const cat = cats[i];
+        const btnClass = (activeCategory === cat.id) ? "bg-slate-900 text-white shadow" : "bg-white border text-slate-700";
+        html += "<button onclick=\"setCategory('" + cat.id + "')\" class=\"px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition " + btnClass + "\">" + cat.name + "</button>";
+      }
+      c.innerHTML = html;
+    }
+
+    function setCategory(id) {
+      activeCategory = id;
+      renderCategories();
+      renderMenu();
+    }
+
+    function renderMenu() {
+      const g = document.getElementById("menuGrid");
+      const baseMenu = (appData && appData.menu) ? appData.menu : [];
+      const l = activeCategory === "ALL" ? baseMenu : baseMenu.filter(function(i) { return i.categoryId === activeCategory; });
+      
+      if (!l || !l.length) {
+        g.innerHTML = "<div class=\"col-span-full text-center py-10 text-xs text-slate-400\">No items available in this category.</div>";
+        return;
+      }
+
+      let html = "";
+      for (let i = 0; i < l.length; i++) {
+        const item = l[i];
+        html += 
+          "<div class=\"bg-white rounded-2xl border overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition\">" +
+            "<div class=\"h-44 relative bg-stone-100\">" +
+              "<img src=\"" + item.imageUrl + "\" class=\"w-full h-full object-cover\" onerror=\"this.src='https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600'\">" +
+              (item.featured ? "<span class=\"absolute top-2.5 left-2.5 bg-[#c59b27] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow\">Popular</span>" : "") +
+            "</div>" +
+            "<div class=\"p-4 space-y-2 flex-grow flex flex-col justify-between\">" +
+              "<div>" +
+                "<h4 class=\"font-bold text-sm text-slate-900\">" + item.name + "</h4>" +
+                "<p class=\"text-xs text-slate-500 line-clamp-2 mt-0.5\">" + item.description + "</p>" +
+              "</div>" +
+              "<div class=\"flex justify-between items-center pt-2 border-t\">" +
+                "<span class=\"text-base font-black text-slate-900\">R " + Number(item.price || 0).toFixed(2) + "</span>" +
+                "<button onclick=\"addToCart('" + item.id + "')\" class=\"px-3.5 py-1.5 bg-amber-50 text-[#9e7914] border border-amber-200 rounded-xl font-bold text-xs hover:bg-[#c59b27] hover:text-white transition\">+ Add</button>" +
+              "</div>" +
+            "</div>" +
+          "</div>";
+      }
+      g.innerHTML = html;
+    }
+
+    function addToCart(id) {
+      const baseMenu = (appData && appData.menu) ? appData.menu : [];
+      let item = null;
+      for (let i = 0; i < baseMenu.length; i++) {
+        if (baseMenu[i].id === id) item = baseMenu[i];
+      }
+      if (!item) return;
+
+      let exists = false;
+      for (let i = 0; i < cart.length; i++) {
+        if (cart[i].id === id) {
+          cart[i].quantity++;
+          exists = true;
+        }
+      }
+      if (!exists) {
+        item.quantity = 1;
+        cart.push(item);
+      }
+      updateCart();
+      toggleCart(true);
+    }
+
+    function updateCart() {
+      const c = document.getElementById("cartItemsList");
+      let sub = 0;
+      let totalCount = 0;
+      for (let i = 0; i < cart.length; i++) {
+        sub += (cart[i].price * cart[i].quantity);
+        totalCount += cart[i].quantity;
+      }
+
+      document.getElementById("cartBadge").innerText = totalCount;
+      document.getElementById("cartSubtotal").innerText = "R " + sub.toFixed(2);
+
+      if (!cart.length) {
+        c.innerHTML = "<p class=\"text-center py-10 text-slate-400\">Cart is empty.</p>";
+        return;
+      }
+
+      let html = "";
+      for (let i = 0; i < cart.length; i++) {
+        const item = cart[i];
+        html += 
+          "<div class=\"flex justify-between items-center p-3 bg-stone-50 rounded-xl border text-xs\">" +
+            "<div><strong class=\"block text-slate-900\">" + item.name + "</strong><span class=\"text-slate-500\">R " + Number(item.price).toFixed(2) + " each</span></div>" +
+            "<div class=\"flex gap-2 bg-white px-2 py-1 border rounded-lg\">" +
+              "<button onclick=\"changeQty('" + item.id + "',-1)\" class=\"font-bold px-1 text-slate-500\">-</button>" +
+              "<span class=\"font-bold font-mono\">" + item.quantity + "</span>" +
+              "<button onclick=\"changeQty('" + item.id + "',1)\" class=\"font-bold px-1 text-slate-500\">+</button>" +
+            "</div>" +
+          "</div>";
+      }
+      c.innerHTML = html;
+    }
+
+    function changeQty(id, d) {
+      for (let i = 0; i < cart.length; i++) {
+        if (cart[i].id === id) {
+          cart[i].quantity += d;
+          break;
+        }
+      }
+      const newCart = [];
+      for (let i = 0; i < cart.length; i++) {
+        if (cart[i].quantity > 0) newCart.push(cart[i]);
+      }
+      cart = newCart;
+      updateCart();
+    }
+
+    function toggleCart(f) {
+      const d = document.getElementById("cartDrawer");
+      const b = document.getElementById("cartBackdrop");
+      if (f || d.classList.contains("translate-x-full")) {
+        d.classList.remove("translate-x-full");
+        b.classList.remove("hidden");
+      } else {
+        d.classList.add("translate-x-full");
+        b.classList.add("hidden");
+      }
+    }
+
+    function openCheckoutModal() {
+      if (isStoreClosed) {
+        const s = (appData && appData.settings) ? appData.settings : {};
+        alert(s.closedNotice || "Store is closed for orders.");
+        return;
+      }
+      if (!cart.length) return;
+      toggleCart(false);
+      
+      const s = (appData && appData.settings) ? appData.settings : {};
+      const isDel = document.getElementById("custOrderType").value === "DELIVERY";
+      let sub = 0;
+      for (let i = 0; i < cart.length; i++) {
+        sub += (cart[i].price * cart[i].quantity);
+      }
+      const total = sub + (isDel ? (Number(s.deliveryFee) || 30) : 0);
+      
+      document.getElementById("finalTotalPayable").innerText = "R " + total.toFixed(2);
+      document.getElementById("checkoutModal").classList.remove("hidden");
+      document.getElementById("checkoutModal").classList.add("flex");
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById("checkoutModal").classList.add("hidden");
+      document.getElementById("checkoutModal").classList.remove("flex");
+    }
+
+    function toggleDeliveryFields() {
+      const isDel = (document.getElementById("custOrderType").value === "DELIVERY");
+      const addrBox = document.getElementById("deliveryBox");
+      const addrInput = document.getElementById("custDeliveryAddress");
+      if (isDel) {
+        addrBox.classList.remove("hidden");
+        addrInput.required = true;
+      } else {
+        addrBox.classList.add("hidden");
+        addrInput.required = false;
+      }
+      openCheckoutModal();
+    }
+
+    async function submitOrder(e) {
+      e.preventDefault();
+      const orderType = document.getElementById("custOrderType").value;
+      const deliveryAddress = document.getElementById("custDeliveryAddress").value.trim();
+
+      if (orderType === "DELIVERY" && !deliveryAddress) {
+        alert("Please enter your complete delivery address.");
+        document.getElementById("custDeliveryAddress").focus();
+        return;
+      }
+
+      try {
+        if ("Notification" in window && Notification.permission === "default") {
+          Notification.requestPermission().catch(function(){});
+        }
+      } catch(e) {}
+
+      const b = document.getElementById("placeOrderBtn");
+      b.innerText = "Creating Order...";
+      b.disabled = true;
+
+      try {
+        const r = await fetch("/api/data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "createOrder",
+            data: {
+              customer: {
+                name: document.getElementById("custName").value.trim(),
+                phone: document.getElementById("custPhone").value.trim()
+              },
+              orderType: orderType,
+              deliveryAddress: deliveryAddress,
+              items: cart
+            }
+          })
+        });
+
+        const text = await r.text();
+        const d = JSON.parse(text);
+
+        if (r.ok && d.trackingToken) {
+          let ts = JSON.parse(localStorage.getItem("hd_tokens") || "[]");
+          ts.push({ token: d.trackingToken, num: d.orderNumber });
+          localStorage.setItem("hd_tokens", JSON.stringify(ts));
+
+          window.location.href = "/order?track=" + encodeURIComponent(d.trackingToken);
+        } else {
+          alert(d.error || "Order failed.");
+          b.innerText = "Place Order & Get Payment Details →";
+          b.disabled = false;
+        }
+      } catch (err) {
+        alert("Network error. Please try again.");
+        b.innerText = "Place Order & Get Payment Details →";
+        b.disabled = false;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
