@@ -11,17 +11,20 @@
   <style>body { background-color: #faf8f5; font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
 <body class="p-4 sm:p-8 flex justify-center items-center min-h-screen">
+  
   <div class="max-w-md w-full bg-white rounded-3xl border shadow-xl p-6 space-y-5">
     <div class="flex justify-between items-center border-b pb-3">
       <a href="/" class="text-xs font-bold text-slate-500 hover:text-slate-900">← Back to Menu</a>
-      <span class="text-xs font-bold text-[#c59b27]">Honeydees Tracker</span>
+      <span class="text-xs font-bold text-[#c59b27]">Honeydees Order Tracker</span>
     </div>
     
+    <!-- BRANDED NOTIFICATION BANNER -->
     <div id="notifyPrompt" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-2xl text-center text-xs space-y-2">
       <p class="font-bold text-amber-900">🔔 Enable lockscreen food updates?</p>
-      <button onclick="requestAlerts()" class="px-4 py-1.5 bg-[#c59b27] text-white rounded-xl font-bold shadow text-xs">Allow Notifications</button>
+      <button onclick="requestAlerts()" class="px-4 py-1.5 bg-[#c59b27] hover:bg-[#9e7914] text-white rounded-xl font-bold shadow text-xs">Allow Notifications</button>
     </div>
 
+    <!-- DYNAMIC STATUS HERO BANNER -->
     <div id="statusHeroBanner" class="hidden p-4 rounded-2xl text-center animate-pulse">
       <span class="text-2xl" id="statusHeroIcon">🎉</span>
       <h3 class="font-extrabold text-sm mt-1" id="statusHeroTitle"></h3>
@@ -33,78 +36,84 @@
 
   <script>
     let cS = {};
-    const VAPID_PUB = "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuB-5qDELROBFMIjISrRkZzs_U"; // Placeholder VAPID
-
-    function urlB64ToUint8(b64) {
-      const p = '='.repeat((4 - b64.length % 4) % 4);
-      const b = (b64 + p).replace(/\-/g, '+').replace(/_/g, '/');
-      const r = window.atob(b);
-      const a = new Uint8Array(r.length);
-      for (let i = 0; i < r.length; ++i) a[i] = r.charCodeAt(i);
-      return a;
-    }
 
     function checkNotify() {
-      if ("Notification" in window && Notification.permission === "default") {
-        document.getElementById("notifyPrompt").classList.remove("hidden");
-      }
+      try {
+        if (window.Notification && Notification.permission === "default") {
+          document.getElementById("notifyPrompt").classList.remove("hidden");
+        }
+      } catch(e) {}
     }
 
     async function requestAlerts() {
-      if ("Notification" in window) {
-        const p = await Notification.requestPermission();
-        if (p === "granted") {
-          document.getElementById("notifyPrompt").classList.add("hidden");
-          // True Web Push Subscription
-          if ('serviceWorker' in navigator && 'PushManager' in window) {
-            const reg = await navigator.serviceWorker.ready;
-            try {
-              const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8(VAPID_PUB) });
-              await fetch('/api/data', { method: 'POST', body: JSON.stringify({ action: 'savePushSub', data: { sub, type: 'customer', id: 'cust_sub' }})});
-            } catch(e) {}
+      try {
+        if (window.Notification) {
+          const p = await Notification.requestPermission();
+          if (p === "granted") {
+            document.getElementById("notifyPrompt").classList.add("hidden");
           }
         }
-      }
+      } catch(e) {}
     }
 
     function triggerNativeNotification(title, body) {
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-      if ("Notification" in window && Notification.permission === "granted") {
-        if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification(title, { body, icon: "https://via.placeholder.com/192.png", data: { url: "/order" } });
-          });
+      try {
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        if (window.Notification && Notification.permission === "granted") {
+          if (navigator.serviceWorker) {
+            navigator.serviceWorker.ready.then(function(reg) {
+              reg.showNotification(title, {
+                body: body,
+                icon: "https://via.placeholder.com/192x192.png?text=Honeydees",
+                data: { url: "/order" }
+              });
+            });
+          }
         }
-      }
+      } catch(e) {}
     }
 
     async function loadOrders() {
       let ts = JSON.parse(localStorage.getItem("hd_tokens") || "[]");
       let q = new URLSearchParams(window.location.search).get("track");
-      if (q && !ts.find(x => x.token === q)) ts.push({ token: q });
+      
+      let found = false;
+      for (let i=0; i<ts.length; i++) { if(ts[i].token === q) found = true; }
+      if (q && !found) { ts.push({ token: q }); }
       
       if (!ts.length) {
-        document.getElementById("oCont").innerHTML = `<div class="text-center py-6"><p class="text-xs text-slate-400 mb-3">No active orders found.</p><a href="/" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Browse Menu</a></div>`;
+        document.getElementById("oCont").innerHTML = 
+          `<div class="text-center py-6">
+            <p class="text-xs text-slate-400 mb-3">No active orders found.</p>
+            <a href="/" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Browse Menu</a>
+          </div>`;
         return;
       }
 
-      let activeTokens = []; let html = "";
+      let activeTokens = [];
+      let html = "";
 
-      for (let t of ts) {
+      for (let i=0; i<ts.length; i++) {
+        const t = ts[i];
         try {
           const r = await fetch(`/api/data?track=${t.token}`);
           if (r.ok) {
-            const d = await r.json();
+            const text = await r.text();
+            const d = JSON.parse(text);
             
             if (cS[d.trackingToken] !== d.status) {
-              if (d.status === 'PREPARING') triggerNativeNotification("Honeydees", `👨‍🍳 Order #${d.orderNumber} is preparing!`);
-              else if (d.status === 'READY') {
+              const cName = (d.customer && d.customer.name) ? d.customer.name : "Customer";
+              const oNum = d.orderNumber || "";
+
+              if (d.status === 'PREPARING') {
+                triggerNativeNotification("Honeydees Feast Update", `👨‍🍳 Order #${oNum} is now being freshly prepared!`);
+              } else if (d.status === 'READY') {
                 if (d.orderType === 'DELIVERY') {
-                  showHeroBanner("🚚", "ON ITS WAY!", "Our driver is en route.", "bg-sky-50 border-sky-500 text-sky-900");
-                  triggerNativeNotification("Honeydees Delivery!", `🚚 Order #${d.orderNumber} is on its way!`);
+                  showHeroBanner("🚚", "YOUR ORDER IS ON ITS WAY!", "Our driver is en route with your fresh meal.", "bg-sky-50 border-2 border-sky-500 text-sky-900");
+                  triggerNativeNotification("Honeydees Delivery!", `🚚 Order #${oNum} is on its way to you!`);
                 } else {
-                  showHeroBanner("🎉", "READY FOR COLLECTION!", "Collect at 14 Viola St.", "bg-emerald-50 border-emerald-500 text-emerald-900");
-                  triggerNativeNotification("Honeydees Ready!", `🎉 Order #${d.orderNumber} is ready!`);
+                  showHeroBanner("🎉", "YOUR ORDER IS READY FOR COLLECTION!", "Please collect at 14 Viola Street.", "bg-emerald-50 border-2 border-emerald-500 text-emerald-900");
+                  triggerNativeNotification("Honeydees Order Ready!", `🎉 Order #${oNum} is ready for collection!`);
                 }
               }
             }
@@ -112,33 +121,66 @@
 
             if (d.status !== 'COMPLETED' && d.status !== 'CANCELLED') {
               activeTokens.push(t);
-              let pC = d.status === 'READY' ? (d.orderType === 'DELIVERY' ? 'bg-sky-100 text-sky-800' : 'bg-emerald-100 text-emerald-800') : 'bg-amber-100 text-amber-800';
-              let sL = d.status === 'READY' ? (d.orderType === 'DELIVERY' ? 'ON ITS WAY' : 'READY TO COLLECT') : d.status;
               
-              html += `<div class="p-4 border rounded-2xl shadow-sm bg-stone-50"><div class="flex justify-between items-center border-b pb-2 mb-2"><h2 class="text-lg font-black font-mono text-slate-900">${d.orderNumber}</h2><span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${pC}">${sL}</span></div><div class="text-xs text-slate-700 space-y-1"><div class="flex justify-between"><span>Fulfilment:</span><strong>${d.orderType}</strong></div>${d.orderType === 'DELIVERY' ? `<div class="flex justify-between"><span>Addr:</span><strong>${d.deliveryAddress}</strong></div>` : `<div class="flex justify-between"><span>Collection:</span><strong>14 Viola St</strong></div>`}<div class="flex justify-between mt-2 pt-2 border-t font-bold"><span>Total Paid:</span><strong class="font-mono text-sm text-slate-900">R ${Number(d.total).toFixed(2)}</strong></div></div></div>`;
+              let pillClass = "bg-amber-100 text-amber-800";
+              let statusLabel = d.status;
+              if (d.status === 'READY') {
+                pillClass = d.orderType === 'DELIVERY' ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800";
+                statusLabel = d.orderType === 'DELIVERY' ? "ON ITS WAY" : "READY FOR COLLECTION";
+              }
+              
+              let itemsHtml = "";
+              if (d.items) {
+                for (let x=0; x<d.items.length; x++) {
+                  const itm = d.items[x];
+                  itemsHtml += `<div class="flex justify-between py-1"><span>${itm.quantity}x ${itm.name}</span><strong class="font-mono">R ${Number(itm.lineTotal || 0).toFixed(2)}</strong></div>`;
+                }
+              }
+
+              html += `
+                <div class="p-4 border border-stone-200 rounded-2xl shadow-sm bg-stone-50">
+                  <div class="flex justify-between items-center border-b pb-2 mb-2">
+                    <h2 class="text-lg font-black font-mono text-slate-900">${d.orderNumber}</h2>
+                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${pillClass}">${statusLabel}</span>
+                  </div>
+                  <div class="text-xs text-slate-700 space-y-1">
+                    <div class="flex justify-between"><span>Fulfilment:</span><strong>${d.orderType}</strong></div>
+                    ${d.orderType === 'DELIVERY' ? `<div class="flex justify-between"><span>Delivery Address:</span><strong>${d.deliveryAddress}</strong></div>` : `<div class="flex justify-between"><span>Collection Address:</span><strong>14 Viola St, Lentegeur</strong></div>`}
+                    <div class="flex justify-between mt-2 pt-2 border-t font-bold"><span>Total Paid:</span><strong class="font-mono text-sm text-slate-900">R ${Number(d.total || 0).toFixed(2)}</strong></div>
+                  </div>
+                </div>`;
             }
           }
         } catch (e) {}
       }
 
       localStorage.setItem("hd_tokens", JSON.stringify(activeTokens));
-      if (!activeTokens.length) html = `<div class="text-center py-6"><p class="text-xs text-slate-400 mb-3">All your orders have been completed!</p><a href="/" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Order Again</a></div>`;
+      
+      if (!activeTokens.length) {
+        html = `
+          <div class="text-center py-6">
+            <p class="text-xs text-slate-400 mb-3">All your orders have been completed!</p>
+            <a href="/" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Order Again</a>
+          </div>`;
+      }
+      
       document.getElementById("oCont").innerHTML = html;
     }
 
-    function showHeroBanner(i, t, s, c) {
-      const b = document.getElementById("statusHeroBanner");
-      b.className = `p-4 border-2 rounded-2xl text-center animate-pulse ${c}`;
-      document.getElementById("statusHeroIcon").innerText = i; document.getElementById("statusHeroTitle").innerText = t; document.getElementById("statusHeroSub").innerText = s;
-      b.classList.remove("hidden");
+    function showHeroBanner(icon, title, sub, classes) {
+      const banner = document.getElementById("statusHeroBanner");
+      banner.className = `p-4 rounded-2xl text-center animate-pulse ${classes}`;
+      document.getElementById("statusHeroIcon").innerText = icon;
+      document.getElementById("statusHeroTitle").innerText = title;
+      document.getElementById("statusHeroSub").innerText = sub;
+      banner.classList.remove("hidden");
     }
 
     window.addEventListener("DOMContentLoaded", () => {
-      checkNotify(); loadOrders();
-      setInterval(loadOrders, 4000); // Super fast 4s loop while screen is on
+      checkNotify();
+      loadOrders();
+      setInterval(loadOrders, 10000);
     });
-    // Instant sync the millisecond the screen turns back on
-    document.addEventListener("visibilitychange", () => { if (document.visibilityState === 'visible') loadOrders(); });
   </script>
 </body>
 </html>
