@@ -104,12 +104,12 @@ export async function onRequest(context) {
         const { trackingToken, popBase64 } = body.data;
         if (!popBase64) return jsonResponse({ error: "No file provided" }, 400);
         const orderId = await env.HONEYDEES_DB.get(`track:${trackingToken}`);
-        if (!orderId) return jsonResponse({ error: "Not found" }, 404);
+        if (!orderId) return jsonResponse({ error: "Order not found" }, 404);
         
         const hash = await sha256(popBase64);
         const dup = await env.HONEYDEES_DB.get(`pophash:${hash}`);
         if (dup && dup !== orderId) {
-          return jsonResponse({ error: "⚠️ Duplicate POP. This exact receipt has already been used for another order. Please upload a valid proof of payment." }, 400);
+          return jsonResponse({ error: "⚠️ Duplicate POP. This exact receipt has already been used for another order." }, 400);
         }
         
         const order = await env.HONEYDEES_DB.get(`order:${orderId}`, "json");
@@ -151,7 +151,7 @@ export async function onRequest(context) {
         if (!order) return jsonResponse({ error: "Not found" }, 404);
         
         if (['PREPARING', 'READY', 'COMPLETED'].includes(status) && order.paymentStatus !== "VERIFIED") {
-          return jsonResponse({ error: "Server Enforced Error: Payment must be explicitly VERIFIED before fulfilling order." }, 400);
+          return jsonResponse({ error: "Server Enforced Error: Payment must be explicitly VERIFIED before preparing or fulfilling." }, 400);
         }
 
         order.status = status;
@@ -209,4 +209,4 @@ function jsonResponse(data, status = 200) {
     status,
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
   });
-  }
+    }
