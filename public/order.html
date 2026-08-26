@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Honeydees | Track Orders</title>
+  <title>Honeydees | Live Order Status</title>
   <link rel="manifest" href="/manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -15,19 +15,20 @@
   <div class="max-w-md w-full bg-white rounded-3xl border shadow-xl p-6 space-y-5">
     <div class="flex justify-between items-center border-b pb-3">
       <a href="/" class="text-xs font-bold text-slate-500 hover:text-slate-900">← Back to Menu</a>
-      <span class="text-xs font-bold text-[#c59b27]">Live Order Tracker</span>
+      <span class="text-xs font-bold text-[#c59b27]">Honeydees Order Tracker</span>
     </div>
     
-    <!-- NOTIFICATION PERMISSION PROMPT -->
-    <div id="notifyPrompt" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs space-y-1">
-      <p class="font-bold text-amber-900">🔔 Enable lockscreen ready alerts?</p>
-      <button onclick="requestAlerts()" class="px-3 py-1 bg-amber-600 text-white rounded-lg font-bold text-[11px]">Enable Notifications</button>
+    <!-- BRANDED NOTIFICATION BANNER (Prevents Spam flag on Android) -->
+    <div id="notifyPrompt" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-2xl text-center text-xs space-y-2">
+      <p class="font-bold text-amber-900">🔔 Enable lockscreen updates for your food?</p>
+      <button onclick="requestAlerts()" class="px-4 py-1.5 bg-[#c59b27] hover:bg-[#9e7914] text-white rounded-xl font-bold shadow text-xs">Allow Notifications</button>
     </div>
 
-    <div id="readyBanner" class="hidden p-4 bg-emerald-50 border-2 border-emerald-500 rounded-2xl text-center animate-pulse">
-      <span class="text-2xl">🎉</span>
-      <h3 class="font-extrabold text-emerald-900 text-sm">YOUR ORDER IS READY!</h3>
-      <p class="text-xs text-emerald-700">Please collect at <strong>14 Viola Street, Lentegeur</strong>.</p>
+    <!-- READY / ON THE WAY NOTIFICATION BANNER -->
+    <div id="statusHeroBanner" class="hidden p-4 rounded-2xl text-center animate-pulse">
+      <span class="text-2xl" id="statusHeroIcon">🎉</span>
+      <h3 class="font-extrabold text-sm mt-1" id="statusHeroTitle"></h3>
+      <p class="text-xs mt-0.5" id="statusHeroSub"></p>
     </div>
     
     <div id="oCont" class="space-y-6"></div>
@@ -58,8 +59,9 @@
           navigator.serviceWorker.ready.then(reg => {
             reg.showNotification(title, {
               body,
-              icon: "https://via.placeholder.com/192x192.png?text=H",
-              badge: "https://via.placeholder.com/192x192.png?text=H"
+              icon: "https://via.placeholder.com/192x192.png?text=Honeydees",
+              badge: "https://via.placeholder.com/192x192.png?text=Honeydees",
+              data: { url: "/order" }
             });
           });
         }
@@ -92,28 +94,42 @@
           if (r.ok) {
             const d = await r.json();
             
-            // Trigger Phone Alert if changed to READY
-            if (d.status === 'READY' && cS[d.trackingToken] !== 'READY') {
-              document.getElementById("readyBanner").classList.remove("hidden");
-              triggerNativeNotification("Honeydees Order Ready!", `Your order #${d.orderNumber} is freshly packed!`);
+            // NOTIFICATION TRANSITIONS (PREPARING vs READY vs ON THE WAY)
+            if (cS[d.trackingToken] !== d.status) {
+              if (d.status === 'PREPARING') {
+                triggerNativeNotification("Honeydees Feast Update", `👨‍🍳 Order #${d.orderNumber} is now being freshly prepared!`);
+              } else if (d.status === 'READY') {
+                if (d.orderType === 'DELIVERY') {
+                  showHeroBanner("🚚", "YOUR ORDER IS ON ITS WAY!", "Our driver is en route with your fresh meal.", "bg-sky-50 border-2 border-sky-500 text-sky-900");
+                  triggerNativeNotification("Honeydees Delivery on its Way!", `🚚 Order #${d.orderNumber} is on its way to you!`);
+                } else {
+                  showHeroBanner("🎉", "YOUR ORDER IS READY FOR COLLECTION!", "Please collect at 14 Viola Street, Lentegeur.", "bg-emerald-50 border-2 border-emerald-500 text-emerald-900");
+                  triggerNativeNotification("Honeydees Order Ready!", `🎉 Order #${d.orderNumber} is ready for collection!`);
+                }
+              }
             }
             cS[d.trackingToken] = d.status;
 
-            // Only keep in customer active list if not COMPLETED or CANCELLED
             if (d.status !== 'COMPLETED' && d.status !== 'CANCELLED') {
               activeTokens.push(t);
-              const pillClass = d.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
+              
+              let pillClass = "bg-amber-100 text-amber-800";
+              let statusLabel = d.status;
+              if (d.status === 'READY') {
+                pillClass = d.orderType === 'DELIVERY' ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800";
+                statusLabel = d.orderType === 'DELIVERY' ? "ON ITS WAY" : "READY FOR COLLECTION";
+              }
               
               html += `
                 <div class="p-4 border border-stone-200 rounded-2xl shadow-sm bg-stone-50">
                   <div class="flex justify-between items-center border-b pb-2 mb-2">
                     <h2 class="text-lg font-black font-mono text-slate-900">${d.orderNumber}</h2>
-                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${pillClass}">${d.status}</span>
+                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${pillClass}">${statusLabel}</span>
                   </div>
                   <div class="text-xs text-slate-700 space-y-1">
-                    <div class="flex justify-between"><span>Type:</span><strong>${d.orderType}</strong></div>
-                    ${d.orderType === 'DELIVERY' ? `<div class="flex justify-between"><span>Addr:</span><strong>${d.deliveryAddress}</strong></div>` : ''}
-                    <div class="flex justify-between mt-2 pt-2 border-t font-bold"><span>Total:</span><strong class="font-mono text-sm text-slate-900">R ${Number(d.total).toFixed(2)}</strong></div>
+                    <div class="flex justify-between"><span>Fulfilment:</span><strong>${d.orderType}</strong></div>
+                    ${d.orderType === 'DELIVERY' ? `<div class="flex justify-between"><span>Delivery Address:</span><strong>${d.deliveryAddress}</strong></div>` : `<div class="flex justify-between"><span>Collection Address:</span><strong>14 Viola St, Lentegeur</strong></div>`}
+                    <div class="flex justify-between mt-2 pt-2 border-t font-bold"><span>Total Paid:</span><strong class="font-mono text-sm text-slate-900">R ${Number(d.total).toFixed(2)}</strong></div>
                   </div>
                 </div>`;
             }
@@ -121,7 +137,7 @@
         } catch (e) { console.error(e); }
       }
 
-      // Auto-wipes completed orders from customer phone memory
+      // Auto-cleanup: Wipes completed orders from phone memory
       localStorage.setItem("hd_tokens", JSON.stringify(activeTokens));
       
       if (!activeTokens.length) {
@@ -133,6 +149,15 @@
       }
       
       document.getElementById("oCont").innerHTML = html;
+    }
+
+    function showHeroBanner(icon, title, sub, classes) {
+      const banner = document.getElementById("statusHeroBanner");
+      banner.className = `p-4 rounded-2xl text-center animate-pulse ${classes}`;
+      document.getElementById("statusHeroIcon").innerText = icon;
+      document.getElementById("statusHeroTitle").innerText = title;
+      document.getElementById("statusHeroSub").innerText = sub;
+      banner.classList.remove("hidden");
     }
 
     window.addEventListener("DOMContentLoaded", () => {
