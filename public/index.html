@@ -25,7 +25,7 @@
   <div id="activeOrderBanner" class="hidden bg-[#c59b27] text-white px-4 py-2.5 text-xs font-bold shadow flex justify-between items-center sticky top-0 z-40">
     <div class="flex items-center gap-2">
       <span class="animate-pulse">📦</span>
-      <span id="activeOrderText">Active Orders in Progress</span>
+      <span id="activeOrderText">Active Orders</span>
     </div>
     <a href="/order" class="bg-slate-900 hover:bg-black text-white px-3 py-1 rounded-lg text-[11px] shadow">View Live Status →</a>
   </div>
@@ -72,39 +72,47 @@
     <div id="cartItemsList" class="p-4 flex-grow overflow-y-auto space-y-3"></div>
     <div class="p-4 border-t bg-stone-50 space-y-3">
       <div class="flex justify-between items-center text-sm font-bold text-slate-600"><span>Subtotal:</span><span id="cartSubtotal" class="text-slate-900 text-base">R 0.00</span></div>
-      <button onclick="openCheckoutModal()" id="checkoutBtn" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl shadow hover:bg-black transition">Checkout →</button>
+      <button onclick="openCheckoutModal()" id="checkoutBtn" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl shadow hover:bg-black transition">Proceed to Checkout →</button>
     </div>
   </aside>
 
   <div id="checkoutModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
     <div class="bg-white max-w-lg w-full rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="serif text-xl font-bold text-slate-900">EFT Payment & Checkout</h3>
-        <button onclick="closeCheckoutModal()" class="text-xl font-bold text-slate-400">×</button>
+        <h3 class="serif text-xl font-bold text-slate-900">EFT Payment & Fulfilment</h3>
+        <button onclick="closeCheckoutModal()" class="text-xl font-bold text-slate-400 hover:text-slate-800">×</button>
       </div>
       <form onsubmit="submitOrder(event)" class="space-y-3 text-xs">
-        <div><label class="font-bold block mb-1">Name *</label><input type="text" id="custName" required placeholder="e.g. Fatima Davids" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
-        <div><label class="font-bold block mb-1">WhatsApp Number *</label><input type="tel" id="custPhone" required placeholder="e.g. 083 989 7938" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
+        <div><label class="font-bold block mb-1">Your Full Name *</label><input type="text" id="custName" required placeholder="e.g. Fatima Davids" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
+        <div><label class="font-bold block mb-1">WhatsApp / Mobile Number *</label><input type="tel" id="custPhone" required placeholder="e.g. 083 989 7938" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
         <div><label class="font-bold block mb-1">Fulfilment Type *</label>
           <select id="custOrderType" onchange="toggleDeliveryFields()" class="w-full p-2.5 border rounded-xl bg-white text-xs font-bold">
             <option value="COLLECTION">Collection (14 Viola St, Lentegeur - 6 PM)</option>
             <option value="DELIVERY">Cape Town Local Delivery (+Fee)</option>
           </select>
         </div>
-        <div id="deliveryBox" class="hidden"><label class="font-bold block mb-1">Full Delivery Address *</label><textarea id="custDeliveryAddress" rows="2" placeholder="Street name, suburb and house number" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></textarea></div>
+        
+        <!-- MANDATORY DELIVERY ADDRESS WHEN DELIVERY IS CHOSEN -->
+        <div id="deliveryBox" class="hidden">
+          <label class="font-bold text-rose-900 block mb-1">Full Delivery Address * (Required for Delivery)</label>
+          <textarea id="custDeliveryAddress" rows="2" placeholder="Street name, suburb, house/unit number" class="w-full p-2.5 border border-rose-300 rounded-xl bg-rose-50/40 text-xs"></textarea>
+        </div>
+
         <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl space-y-1 text-slate-700">
-          <span class="font-bold text-[#9e7914] block text-[11px] uppercase">Bank Transfer Details</span>
+          <span class="font-bold text-[#9e7914] block text-[11px] uppercase">Bank Transfer (EFT) Details</span>
           <div class="flex justify-between"><span>Bank:</span><strong id="eftBank">Standard Bank</strong></div>
           <div class="flex justify-between"><span>Account Holder:</span><strong id="eftHolder">Honeydees Food</strong></div>
           <div class="flex justify-between"><span>Account Number:</span><strong id="eftAcc" class="font-mono">10192837465</strong></div>
           <div class="flex justify-between"><span>Branch Code:</span><strong id="eftBranch" class="font-mono">051001</strong></div>
           <div class="flex justify-between border-t border-amber-200 pt-1.5 font-bold text-sm text-slate-900"><span>Total Payable:</span><span id="finalTotalPayable" class="text-[#9e7914]">R 0.00</span></div>
         </div>
+
         <div class="p-3 bg-rose-50 border-2 border-rose-200 rounded-xl space-y-1.5">
           <label class="font-bold text-rose-900 block text-xs"><i class="fa-solid fa-receipt mr-1 text-rose-600"></i>Upload Proof of Payment (POP) * (Mandatory)</label>
           <input type="file" id="popFile" required accept="image/*,application/pdf" class="w-full p-2 bg-white border border-rose-300 rounded-xl text-xs">
-          <span class="text-[10px] text-rose-700 font-bold block">Orders are only accepted once payment receipt is attached.</span>
+          <span class="text-[10px] text-rose-700 font-bold block">Orders cannot be processed without proof of payment.</span>
         </div>
+
         <button type="submit" id="placeOrderBtn" class="w-full py-3.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow transition">Confirm Order →</button>
       </form>
     </div>
@@ -134,10 +142,10 @@
       if (s.accountNumber) document.getElementById("eftAcc").innerText = s.accountNumber;
       if (s.branchCode) document.getElementById("eftBranch").innerText = s.branchCode;
 
-      // Handle Store Closed State
+      // Handle Store Operating Hours & Open/Closed Window
       if (s.isStoreOpen === false) {
         document.getElementById("storeClosedBanner").classList.remove("hidden");
-        document.getElementById("closedNoticeText").innerText = s.closedNotice || "We are currently closed for orders.";
+        document.getElementById("closedNoticeText").innerText = s.closedNotice || "Store is closed for orders.";
         document.getElementById("checkoutBtn").disabled = true;
         document.getElementById("checkoutBtn").innerText = "🔒 Store Currently Closed";
         document.getElementById("checkoutBtn").className = "w-full py-3.5 bg-slate-400 text-white font-bold rounded-xl cursor-not-allowed";
@@ -150,7 +158,7 @@
     function checkActiveOrdersBanner() {
       let t = JSON.parse(localStorage.getItem("hd_tokens") || "[]");
       if (t.length > 0) {
-        document.getElementById("activeOrderText").innerText = `${t.length} Active Order${t.length > 1 ? 's' : ''} in Progress`;
+        document.getElementById("activeOrderText").innerText = `${t.length} Active Order${t.length > 1 ? 's' : ''}`;
         document.getElementById("activeOrderBanner").classList.remove("hidden");
       }
     }
@@ -170,13 +178,13 @@
     function renderMenu() {
       const g = document.getElementById("menuGrid");
       const l = activeCategory === "ALL" ? appData.menu : (appData.menu || []).filter(i => i.categoryId === activeCategory);
-      if (!l || !l.length) return g.innerHTML = `<div class="col-span-full text-center py-10 text-xs text-slate-400">No items in this category.</div>`;
+      if (!l || !l.length) return g.innerHTML = `<div class="col-span-full text-center py-10 text-xs text-slate-400">No items available in this category.</div>`;
 
       g.innerHTML = l.map(i => `
         <div class="bg-white rounded-2xl border overflow-hidden shadow-sm flex flex-col justify-between">
           <div class="h-44 relative bg-stone-100">
             <img src="${i.imageUrl}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600'">
-            ${i.featured ? '<span class="absolute top-2 left-2 bg-[#c59b27] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow">Popular</span>' : ''}
+            ${i.featured ? '<span class="absolute top-2.5 left-2.5 bg-[#c59b27] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow">Popular</span>' : ''}
           </div>
           <div class="p-4 space-y-2 flex-grow flex flex-col justify-between">
             <div>
@@ -239,7 +247,7 @@
 
     function openCheckoutModal() {
       if (appData.settings?.isStoreOpen === false) {
-        alert(appData.settings?.closedNotice || "Orders are currently closed.");
+        alert(appData.settings?.closedNotice || "Store is closed for orders.");
         return;
       }
       if (!cart.length) return;
@@ -258,17 +266,30 @@
 
     function toggleDeliveryFields() {
       const isDel = document.getElementById("custOrderType").value === "DELIVERY";
-      document.getElementById("deliveryBox").classList.toggle("hidden", !isDel);
+      const addrBox = document.getElementById("deliveryBox");
+      const addrInput = document.getElementById("custDeliveryAddress");
+      addrBox.classList.toggle("hidden", !isDel);
+      addrInput.required = isDel;
       openCheckoutModal();
     }
 
     async function submitOrder(e) {
       e.preventDefault();
+      const orderType = document.getElementById("custOrderType").value;
+      const deliveryAddress = document.getElementById("custDeliveryAddress").value.trim();
+
+      // STRICT VALIDATION FOR DELIVERY ADDRESS
+      if (orderType === "DELIVERY" && !deliveryAddress) {
+        alert("Please enter your complete delivery address.");
+        document.getElementById("custDeliveryAddress").focus();
+        return;
+      }
+
       const f = document.getElementById("popFile").files[0];
       if (!f) return alert("Proof of payment receipt is strictly required.");
 
       const b = document.getElementById("placeOrderBtn");
-      b.innerText = "Placing Order...";
+      b.innerText = "Processing Order...";
       b.disabled = true;
 
       const b64 = await new Promise(r => {
@@ -288,8 +309,8 @@
                 name: document.getElementById("custName").value.trim(),
                 phone: document.getElementById("custPhone").value.trim()
               },
-              orderType: document.getElementById("custOrderType").value,
-              deliveryAddress: document.getElementById("custDeliveryAddress").value.trim(),
+              orderType: orderType,
+              deliveryAddress: deliveryAddress,
               items: cart,
               popBase64: b64
             }
@@ -308,7 +329,7 @@
           b.disabled = false;
         }
       } catch (err) {
-        alert("Connection Error. Please retry.");
+        alert("Network error. Please try again.");
         b.disabled = false;
       }
     }
@@ -316,4 +337,4 @@
     window.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
-    </html>
+</html>
