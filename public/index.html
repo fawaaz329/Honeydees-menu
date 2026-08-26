@@ -16,16 +16,21 @@
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col justify-between">
 
-  <!-- ACTIVE ORDERS MULTI-BANNER -->
-  <div id="activeOrderBanner" class="hidden bg-[#c59b27] text-white px-4 py-2.5 text-xs font-bold shadow flex justify-between items-center sticky top-0 z-50">
-    <div class="flex items-center gap-2">
-      <span class="animate-pulse">📦</span>
-      <span id="activeOrderText">Active Orders</span>
-    </div>
-    <a href="/order" class="bg-slate-900 hover:bg-black text-white px-3 py-1 rounded-lg text-[11px] shadow">View Status →</a>
+  <!-- STORE CLOSED BANNER -->
+  <div id="storeClosedBanner" class="hidden bg-rose-700 text-white p-3 text-center text-xs font-bold shadow-md sticky top-0 z-50">
+    🔒 <span id="closedNoticeText">We are currently closed for orders.</span>
   </div>
 
-  <nav class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-200">
+  <!-- ACTIVE ORDERS MULTI-BANNER -->
+  <div id="activeOrderBanner" class="hidden bg-[#c59b27] text-white px-4 py-2.5 text-xs font-bold shadow flex justify-between items-center sticky top-0 z-40">
+    <div class="flex items-center gap-2">
+      <span class="animate-pulse">📦</span>
+      <span id="activeOrderText">Active Orders in Progress</span>
+    </div>
+    <a href="/order" class="bg-slate-900 hover:bg-black text-white px-3 py-1 rounded-lg text-[11px] shadow">View Live Status →</a>
+  </div>
+
+  <nav class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-stone-200">
     <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
       <div class="flex items-center gap-3 cursor-pointer" onclick="location.href='/'">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c59b27] to-[#9e7914] flex items-center justify-center text-white font-bold text-lg shadow">H</div>
@@ -74,19 +79,19 @@
   <div id="checkoutModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
     <div class="bg-white max-w-lg w-full rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="serif text-xl font-bold text-slate-900">EFT Payment</h3>
+        <h3 class="serif text-xl font-bold text-slate-900">EFT Payment & Checkout</h3>
         <button onclick="closeCheckoutModal()" class="text-xl font-bold text-slate-400">×</button>
       </div>
       <form onsubmit="submitOrder(event)" class="space-y-3 text-xs">
-        <div><label class="font-bold block mb-1">Name *</label><input type="text" id="custName" required class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
-        <div><label class="font-bold block mb-1">WhatsApp Number *</label><input type="tel" id="custPhone" required class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
-        <div><label class="font-bold block mb-1">Fulfilment *</label>
+        <div><label class="font-bold block mb-1">Name *</label><input type="text" id="custName" required placeholder="e.g. Fatima Davids" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
+        <div><label class="font-bold block mb-1">WhatsApp Number *</label><input type="tel" id="custPhone" required placeholder="e.g. 083 989 7938" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></div>
+        <div><label class="font-bold block mb-1">Fulfilment Type *</label>
           <select id="custOrderType" onchange="toggleDeliveryFields()" class="w-full p-2.5 border rounded-xl bg-white text-xs font-bold">
             <option value="COLLECTION">Collection (14 Viola St, Lentegeur - 6 PM)</option>
             <option value="DELIVERY">Cape Town Local Delivery (+Fee)</option>
           </select>
         </div>
-        <div id="deliveryBox" class="hidden"><label class="font-bold block mb-1">Address *</label><textarea id="custDeliveryAddress" rows="2" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></textarea></div>
+        <div id="deliveryBox" class="hidden"><label class="font-bold block mb-1">Full Delivery Address *</label><textarea id="custDeliveryAddress" rows="2" placeholder="Street name, suburb and house number" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs"></textarea></div>
         <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl space-y-1 text-slate-700">
           <span class="font-bold text-[#9e7914] block text-[11px] uppercase">Bank Transfer Details</span>
           <div class="flex justify-between"><span>Bank:</span><strong id="eftBank">Standard Bank</strong></div>
@@ -98,14 +103,14 @@
         <div class="p-3 bg-rose-50 border-2 border-rose-200 rounded-xl space-y-1.5">
           <label class="font-bold text-rose-900 block text-xs"><i class="fa-solid fa-receipt mr-1 text-rose-600"></i>Upload Proof of Payment (POP) * (Mandatory)</label>
           <input type="file" id="popFile" required accept="image/*,application/pdf" class="w-full p-2 bg-white border border-rose-300 rounded-xl text-xs">
-          <span class="text-[10px] text-rose-700 font-bold block">Orders are not accepted without proof of payment.</span>
+          <span class="text-[10px] text-rose-700 font-bold block">Orders are only accepted once payment receipt is attached.</span>
         </div>
         <button type="submit" id="placeOrderBtn" class="w-full py-3.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow transition">Confirm Order →</button>
       </form>
     </div>
   </div>
 
-  <footer class="border-t border-stone-200 bg-white py-4 text-center text-[11px] text-slate-500"><p>© 2026 Honeydees Halal Kitchen</p></footer>
+  <footer class="border-t border-stone-200 bg-white py-4 text-center text-[11px] text-slate-500"><p>© 2026 Honeydees Halal Kitchen • Cape Town</p></footer>
 
   <script>
     let appData = { menu: [], categories: [], settings: {} };
@@ -129,6 +134,15 @@
       if (s.accountNumber) document.getElementById("eftAcc").innerText = s.accountNumber;
       if (s.branchCode) document.getElementById("eftBranch").innerText = s.branchCode;
 
+      // Handle Store Closed State
+      if (s.isStoreOpen === false) {
+        document.getElementById("storeClosedBanner").classList.remove("hidden");
+        document.getElementById("closedNoticeText").innerText = s.closedNotice || "We are currently closed for orders.";
+        document.getElementById("checkoutBtn").disabled = true;
+        document.getElementById("checkoutBtn").innerText = "🔒 Store Currently Closed";
+        document.getElementById("checkoutBtn").className = "w-full py-3.5 bg-slate-400 text-white font-bold rounded-xl cursor-not-allowed";
+      }
+
       renderCategories();
       renderMenu();
     }
@@ -136,7 +150,7 @@
     function checkActiveOrdersBanner() {
       let t = JSON.parse(localStorage.getItem("hd_tokens") || "[]");
       if (t.length > 0) {
-        document.getElementById("activeOrderText").innerText = `${t.length} Active Order${t.length > 1 ? 's' : ''}`;
+        document.getElementById("activeOrderText").innerText = `${t.length} Active Order${t.length > 1 ? 's' : ''} in Progress`;
         document.getElementById("activeOrderBanner").classList.remove("hidden");
       }
     }
@@ -224,6 +238,10 @@
     }
 
     function openCheckoutModal() {
+      if (appData.settings?.isStoreOpen === false) {
+        alert(appData.settings?.closedNotice || "Orders are currently closed.");
+        return;
+      }
       if (!cart.length) return;
       toggleCart(false);
       const d = document.getElementById("custOrderType").value === "DELIVERY";
@@ -239,7 +257,8 @@
     }
 
     function toggleDeliveryFields() {
-      document.getElementById("deliveryBox").classList.toggle("hidden", document.getElementById("custOrderType").value === "DELIVERY");
+      const isDel = document.getElementById("custOrderType").value === "DELIVERY";
+      document.getElementById("deliveryBox").classList.toggle("hidden", !isDel);
       openCheckoutModal();
     }
 
@@ -297,4 +316,4 @@
     window.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
-</html>
+    </html>
