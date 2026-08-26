@@ -1,1 +1,114 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Honeydees Tracker</title><link rel="manifest" href="/manifest.json"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><style>body{background-color:#faf8f5;font-family:'Plus Jakarta Sans',sans-serif}</style></head><body class="p-4 sm:p-8 flex justify-center items-center min-h-screen"><div class="max-w-md w-full bg-white rounded-3xl border shadow-xl p-6 space-y-5"><div class="flex justify-between items-center border-b pb-3"><a href="/" class="text-xs font-bold text-slate-500">← Menu</a><span class="text-xs font-bold text-[#c59b27]">Tracker</span></div><div id="readyBanner" class="hidden p-4 bg-emerald-50 border-2 border-emerald-500 rounded-2xl text-center animate-pulse"><span class="text-2xl">🎉</span><h3 class="font-extrabold text-emerald-900 text-sm">ORDER READY!</h3><p class="text-xs text-emerald-700">Collect at 14 Viola St, Lentegeur</p></div><div id="trackingContent" class="space-y-4"><div class="text-center space-y-1.5"><span id="statusPill" class="px-3.5 py-1 rounded-full text-xs font-black uppercase inline-block"></span><h2 id="orderNum" class="text-2xl font-black font-mono"></h2><p id="custLine" class="text-xs text-slate-500"></p></div><div class="bg-amber-50 p-3.5 rounded-xl border text-xs space-y-1"><div class="flex justify-between"><span>Fulfilment:</span><strong id="ordType"></strong></div><div id="addrRow" class="flex justify-between hidden"><span>Addr:</span><strong id="ordAddr"></strong></div></div><div class="space-y-1.5 text-xs"><h4 class="font-bold text-[10px] uppercase">Summary</h4><div id="itemsTbody" class="border rounded-xl p-3 bg-stone-50 divide-y"></div><div class="flex justify-between font-extrabold pt-1"><span>Total Paid:</span><span id="ordTotal"></span></div></div></div></div><script>let aT=new URLSearchParams(window.location.search).get("track")||localStorage.getItem("hd_active_token"),cS="";if("Notification" in window&&Notification.permission!=="granted"&&Notification.permission!=="denied")Notification.requestPermission();async function lO(){if(!aT)return(document.getElementById("trackingContent").innerHTML=`<div class="text-center py-6"><p class="text-xs text-slate-400 mb-3">No active order.</p><a href="/" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Menu</a></div>`);const r=await fetch(`/api/data?track=${aT}`);if(!r.ok)return;const d=await r.json();document.getElementById("orderNum").innerText=d.orderNumber;document.getElementById("custLine").innerText=`By ${d.customer.name}`;document.getElementById("ordType").innerText=d.orderType;if(d.orderType==="DELIVERY"){document.getElementById("addrRow").classList.remove("hidden");document.getElementById("ordAddr").innerText=d.deliveryAddress}document.getElementById("ordTotal").innerText=`R ${Number(d.total).toFixed(2)}`;const p=document.getElementById("statusPill");p.innerText=d.status;p.className=`px-3.5 py-1 rounded-full text-[10px] font-black uppercase ${d.status==='READY'?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}`;if(d.status==='READY'){document.getElementById("readyBanner").classList.remove("hidden");if(cS!=='READY'){if(navigator.vibrate)navigator.vibrate([200,100,200]);if(Notification.permission==="granted")new Notification("Order Ready!",{body:"Ready for collection.",icon:"https://via.placeholder.com/192x192.png"})}}if(d.status==='COMPLETED'||d.status==='CANCELLED'){localStorage.removeItem("hd_active_token");localStorage.removeItem("hd_active_num")}cS=d.status;document.getElementById("itemsTbody").innerHTML=d.items.map(i=>`<div class="flex justify-between py-1"><span>${i.quantity}x ${i.name}</span><strong class="font-mono">R ${Number(i.lineTotal).toFixed(2)}</strong></div>`).join('')}window.addEventListener("DOMContentLoaded",()=>{lO();setInterval(lO,10000)});</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Honeydees | Track</title>
+  <link rel="manifest" href="/manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>body { background-color: #faf8f5; font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+</head>
+<body class="p-4 sm:p-8 flex justify-center items-center min-h-screen">
+  
+  <div class="max-w-md w-full bg-white rounded-3xl border shadow-xl p-6 space-y-5">
+    <div class="flex justify-between items-center border-b pb-3">
+      <a href="/" class="text-xs font-bold text-slate-500">← Menu</a>
+      <span class="text-xs font-bold text-[#c59b27]">Tracker</span>
+    </div>
+    
+    <div id="readyBanner" class="hidden p-4 bg-emerald-50 border-2 border-emerald-500 rounded-2xl text-center animate-pulse">
+      <h3 class="font-extrabold text-emerald-900 text-sm">READY!</h3>
+      <p class="text-xs">Collect at 14 Viola St</p>
+    </div>
+    
+    <!-- All active orders will render in this container -->
+    <div id="oCont" class="space-y-6"></div>
+  </div>
+
+  <script>
+    let cS = {};
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+
+    async function loadOrders() {
+      let ts = JSON.parse(localStorage.getItem("hd_tokens") || "[]");
+      let q = new URLSearchParams(window.location.search).get("track");
+      
+      if (q && !ts.find(x => x.token === q)) {
+        ts.push({ token: q });
+      }
+      
+      if (!ts.length) {
+        document.getElementById("oCont").innerHTML = `
+          <div class="text-center py-6">
+            <p class="text-xs text-slate-400 mb-3">No active orders.</p>
+            <a href="/" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Menu</a>
+          </div>`;
+        return;
+      }
+
+      let activeTokens = [];
+      let html = "";
+
+      for (let t of ts) {
+        try {
+          const r = await fetch(`/api/data?track=${t.token}`);
+          if (r.ok) {
+            const d = await r.json();
+            
+            // Push Notification & Vibrate on READY
+            if (d.status === 'READY' && cS[d.trackingToken] !== 'READY') {
+              document.getElementById("readyBanner").classList.remove("hidden");
+              if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+              if (Notification.permission === "granted") {
+                new Notification("Ready!", { body: `Order ${d.orderNumber} is ready.`, icon: "https://via.placeholder.com/192.png" });
+              }
+            }
+            cS[d.trackingToken] = d.status;
+
+            // Only keep if not Completed/Cancelled
+            if (d.status !== 'COMPLETED' && d.status !== 'CANCELLED') {
+              activeTokens.push(t);
+              const pillClass = d.status === 'READY' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
+              
+              html += `
+                <div class="p-4 border border-stone-200 rounded-2xl shadow-sm bg-stone-50">
+                  <div class="flex justify-between items-center border-b pb-2 mb-2">
+                    <h2 class="text-lg font-black font-mono text-slate-900">${d.orderNumber}</h2>
+                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${pillClass}">${d.status}</span>
+                  </div>
+                  <div class="text-xs text-slate-700 space-y-1">
+                    <div class="flex justify-between"><span>Type:</span><strong>${d.orderType}</strong></div>
+                    ${d.orderType === 'DELIVERY' ? `<div class="flex justify-between"><span>Addr:</span><strong>${d.deliveryAddress}</strong></div>` : ''}
+                    <div class="flex justify-between mt-2 pt-2 border-t"><span>Total:</span><strong class="font-mono text-sm">R ${Number(d.total).toFixed(2)}</strong></div>
+                  </div>
+                </div>`;
+            }
+          }
+        } catch (e) { console.error("Error fetching order", e); }
+      }
+
+      // Automatically wipe completed orders from memory
+      localStorage.setItem("hd_tokens", JSON.stringify(activeTokens));
+      
+      if (!activeTokens.length) {
+        html = `
+          <div class="text-center py-6">
+            <p class="text-xs text-slate-400 mb-3">All orders completed!</p>
+            <a href="/" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs">Order Again</a>
+          </div>`;
+      }
+      
+      document.getElementById("oCont").innerHTML = html;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadOrders();
+      setInterval(loadOrders, 10000);
+    });
+  </script>
+</body>
+</html>
