@@ -1,134 +1,70 @@
-const SEED_DATA = {
+const SD = {
   settings: {
-    businessName: "Honeydees",
-    halalBadge: "100% Strictly Halal",
-    isStoreOpen: true,
-    operatingDays: "Friday",
-    openTime: "14:00",
-    closeTime: "21:30",
-    closedNotice: "We are currently closed. Next ordering window opens Friday at 2:00 PM.",
-    heroHeading: "Cape Town's Friday Night Treat",
-    heroSubtitle: "Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.",
-    scheduleNotice: "Collection: 14 Viola St, Lentegeur (From 6:00 PM)",
-    collectionAddress: "14 Viola Street, Lentegeur, Mitchells Plain",
-    collectionTimes: "Fridays 6:00 PM–9:30 PM",
-    deliveryFee: 30,
-    bankName: "Standard Bank",
-    accountHolder: "Honeydees Food Enterprise",
-    accountNumber: "10192837465",
-    branchCode: "051001"
+    businessName: "Honeydees", halalBadge: "100% Strictly Halal", isStoreOpen: true, operatingDays: "Fridays Only",
+    openTime: "14:00", closeTime: "21:30", closedNotice: "We are currently closed.",
+    heroHeading: "Cape Town's Friday Night Treat", heroSubtitle: "Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.",
+    scheduleNotice: "Collection: 14 Viola St, Lentegeur (From 6:00 PM)", collectionAddress: "14 Viola Street, Lentegeur, Mitchells Plain",
+    deliveryFee: 30, bankName: "Standard Bank", accountHolder: "Honeydees Food Enterprise", accountNumber: "10192837465", branchCode: "051001"
   },
-  categories: [
-    { id: "cat_mains", name: "Main Meals" },
-    { id: "cat_wraps", name: "Wraps & Grills" },
-    { id: "cat_mocktails", name: "Artisanal Mocktails" },
-    { id: "cat_desserts", name: "Desserts & Treats" }
-  ],
-  menu: [
-    {
-      id: "item_1",
-      name: "Masala Steak Sandwich",
-      description: "Masala steak cutlets, slap chips & fresh salad.",
-      price: 65,
-      categoryId: "cat_mains",
-      imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80",
-      available: true,
-      featured: true
-    }
-  ]
+  categories: [{ id: "cat_mains", name: "Main Meals" }, { id: "cat_wraps", name: "Wraps & Grills" }],
+  menu: [{ id: "item_1", name: "Masala Steak Sandwich", description: "Masala steak cutlets & fresh salad.", price: 65, categoryId: "cat_mains", imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80", available: true, featured: true }]
 };
+
+async function sha256(b64) {
+  const msg = new TextEncoder().encode(b64);
+  const hash = await crypto.subtle.digest('SHA-256', msg);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
 
   if (request.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      }
-    });
+    return new Response(null, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization" } });
   }
 
-  const authHeader = request.headers.get("Authorization") || "";
-  const adminSecret = env.ADMIN_PASSWORD || "Honeydees2026!";
-  const isAdmin = authHeader === adminSecret;
+  const ah = request.headers.get("Authorization") || "";
+  const as = env.ADMIN_PASSWORD || "Honeydees2026!";
+  const iA = ah === as;
 
   try {
     if (request.method === "GET") {
-      const trackToken = url.searchParams.get("track");
-      if (trackToken) {
-        const id = await env.HONEYDEES_DB.get(`track:${trackToken}`);
+      const tk = url.searchParams.get("track");
+      if (tk) {
+        const id = await env.HONEYDEES_DB.get(`track:${tk}`);
         if (!id) return jsonResponse({ error: "Order not found" }, 404);
-        return jsonResponse(await env.HONEYDEES_DB.get(`order:${id}`, "json"));
+        const orderData = await env.HONEYDEES_DB.get(`order:${id}`, "json");
+        orderData.settings = await env.HONEYDEES_DB.get("settings", "json") || SD.settings;
+        return jsonResponse(orderData);
       }
 
-      let settings = await env.HONEYDEES_DB.get("settings", "json") || SEED_DATA.settings;
-      let categories = await env.HONEYDEES_DB.get("categories", "json") || SEED_DATA.categories;
-      let menu = await env.HONEYDEES_DB.get("menu", "json") || SEED_DATA.menu;
+      let st = await env.HONEYDEES_DB.get("settings", "json") || SD.settings;
+      let ct = await env.HONEYDEES_DB.get("categories", "json") || SD.categories;
+      let mn = await env.HONEYDEES_DB.get("menu", "json") || SD.menu;
       let orders = [];
 
-      if (isAdmin) {
-        const index = await env.HONEYDEES_DB.get("index:orders", "json") || [];
-        for (const id of index.slice(0, 200)) {
+      if (iA) {
+        const ix = await env.HONEYDEES_DB.get("index:orders", "json") || [];
+        for (const id of ix.slice(0, 200)) {
           const od = await env.HONEYDEES_DB.get(`order:${id}`, "json");
           if (od) orders.push(od);
         }
       }
-      return jsonResponse({
-        authenticated: isAdmin,
-        public: { settings, categories, menu },
-        orders: isAdmin ? orders : undefined
-      });
+      return jsonResponse({ authenticated: iA, public: { settings: st, categories: ct, menu: mn }, orders: iA ? orders : undefined });
     }
 
     if (request.method === "POST") {
       const body = await request.json();
 
       if (body.action === "createOrder") {
-        const settings = await env.HONEYDEES_DB.get("settings", "json") || SEED_DATA.settings;
-        
-        // --- STRICT SAST TIME & DAY VALIDATION ---
-        let isClosed = false;
-        if (settings.isStoreOpen === false) {
-          isClosed = true; // Manual force close
-        } else {
-          const d = new Date();
-          const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-          const sast = new Date(utc + (3600000 * 2)); // SAST is UTC+2
-          
-          const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-          const currentDay = days[sast.getDay()].toLowerCase();
-          const currentH = sast.getHours();
-          const currentM = sast.getMinutes();
-          const currentTimeStr = (currentH < 10 ? '0'+currentH : currentH) + ":" + (currentM < 10 ? '0'+currentM : currentM);
-          
-          const opDays = (settings.operatingDays || "Friday").toLowerCase();
-          
-          if (!opDays.includes(currentDay) && !opDays.includes("everyday") && !opDays.includes("all")) {
-            isClosed = true; // Wrong Day
-          } else if (settings.openTime && settings.closeTime) {
-            if (currentTimeStr < settings.openTime || currentTimeStr > settings.closeTime) {
-              isClosed = true; // Outside of operating hours
-            }
-          }
-        }
+        const settings = await env.HONEYDEES_DB.get("settings", "json") || SD.settings;
+        if (settings.isStoreOpen === false) return jsonResponse({ error: settings.closedNotice || "Ordering is closed." }, 400);
 
-        if (isClosed) {
-          return jsonResponse({ error: settings.closedNotice || "Store is currently closed for orders." }, 400);
-        }
-        // -----------------------------------------
+        const { customer, orderType, deliveryAddress, items } = body.data;
+        if (orderType === "DELIVERY" && (!deliveryAddress || !deliveryAddress.trim())) return jsonResponse({ error: "Delivery address required." }, 400);
 
-        const { customer, orderType, deliveryAddress, items, popBase64 } = body.data;
-
-        if (!popBase64) return jsonResponse({ error: "Proof of Payment is strictly required." }, 400);
-        if (orderType === "DELIVERY" && (!deliveryAddress || !deliveryAddress.trim())) {
-          return jsonResponse({ error: "Delivery address is required for delivery orders." }, 400);
-        }
-
-        const menu = await env.HONEYDEES_DB.get("menu", "json") || SEED_DATA.menu;
+        const menu = await env.HONEYDEES_DB.get("menu", "json") || SD.menu;
         const menuMap = new Map(menu.map(i => [i.id, i]));
         let subtotal = 0, verifiedItems = [];
 
@@ -143,22 +79,14 @@ export async function onRequest(context) {
 
         const deliveryFee = orderType === "DELIVERY" ? (Number(settings.deliveryFee) || 30) : 0;
         const total = subtotal + deliveryFee;
-        const orderNumber = "HD-" + Math.floor(100000 + Math.random() * 900000);
+        const orderNumber = "HNY" + Math.floor(100000 + Math.random() * 900000);
         const trackingToken = crypto.randomUUID();
 
         const newOrder = {
           id: "ord_" + Date.now(),
-          orderNumber,
-          trackingToken,
-          customer,
-          orderType,
-          deliveryAddress: deliveryAddress ? deliveryAddress.trim() : "",
-          items: verifiedItems,
-          subtotal,
-          deliveryFee,
-          total,
-          status: "PAYMENT PROOF RECEIVED",
-          popBase64,
+          orderNumber, trackingToken, customer, orderType, deliveryAddress: deliveryAddress ? deliveryAddress.trim() : "",
+          items: verifiedItems, subtotal, deliveryFee, total,
+          status: "AWAITING PAYMENT", paymentStatus: "PENDING", popBase64: null, popHash: null,
           createdAt: new Date().toLocaleDateString("en-GB") + " " + new Date().toLocaleTimeString("en-GB")
         };
 
@@ -172,12 +100,60 @@ export async function onRequest(context) {
         return jsonResponse({ success: true, trackingToken, orderNumber, total });
       }
 
-      if (!isAdmin) return jsonResponse({ error: "Unauthorized" }, 401);
+      if (body.action === "uploadLatePOP") {
+        const { trackingToken, popBase64 } = body.data;
+        if (!popBase64) return jsonResponse({ error: "No file provided" }, 400);
+        const orderId = await env.HONEYDEES_DB.get(`track:${trackingToken}`);
+        if (!orderId) return jsonResponse({ error: "Not found" }, 404);
+        
+        const hash = await sha256(popBase64);
+        const dup = await env.HONEYDEES_DB.get(`pophash:${hash}`);
+        if (dup && dup !== orderId) {
+          return jsonResponse({ error: "⚠️ Duplicate POP. This exact receipt has already been used for another order. Please upload a valid proof of payment." }, 400);
+        }
+        
+        const order = await env.HONEYDEES_DB.get(`order:${orderId}`, "json");
+        order.popBase64 = popBase64;
+        order.popHash = hash;
+        order.status = "PAYMENT UNDER REVIEW";
+        order.paymentStatus = "REVIEW";
+        await env.HONEYDEES_DB.put(`pophash:${hash}`, orderId);
+        await env.HONEYDEES_DB.put(`order:${orderId}`, JSON.stringify(order));
+        return jsonResponse({ success: true });
+      }
+
+      if (!iA) return jsonResponse({ error: "Unauthorized" }, 401);
+
+      if (body.action === "verifyPayment") {
+        const { orderId } = body.data;
+        const order = await env.HONEYDEES_DB.get(`order:${orderId}`, "json");
+        order.paymentStatus = "VERIFIED";
+        order.status = "PAYMENT VERIFIED";
+        await env.HONEYDEES_DB.put(`order:${orderId}`, JSON.stringify(order));
+        return jsonResponse({ success: true });
+      }
+
+      if (body.action === "rejectPayment") {
+        const { orderId } = body.data;
+        const order = await env.HONEYDEES_DB.get(`order:${orderId}`, "json");
+        order.paymentStatus = "REJECTED";
+        order.status = "PAYMENT REJECTED";
+        if (order.popHash) await env.HONEYDEES_DB.delete(`pophash:${order.popHash}`);
+        order.popBase64 = null;
+        order.popHash = null;
+        await env.HONEYDEES_DB.put(`order:${orderId}`, JSON.stringify(order));
+        return jsonResponse({ success: true });
+      }
 
       if (body.action === "updateOrderStatus") {
         const { orderId, status } = body.data;
         const order = await env.HONEYDEES_DB.get(`order:${orderId}`, "json");
         if (!order) return jsonResponse({ error: "Not found" }, 404);
+        
+        if (['PREPARING', 'READY', 'COMPLETED'].includes(status) && order.paymentStatus !== "VERIFIED") {
+          return jsonResponse({ error: "Server Enforced Error: Payment must be explicitly VERIFIED before fulfilling order." }, 400);
+        }
+
         order.status = status;
         await env.HONEYDEES_DB.put(`order:${orderId}`, JSON.stringify(order));
         return jsonResponse({ success: true });
@@ -191,6 +167,7 @@ export async function onRequest(context) {
           if (order && (order.status === "COMPLETED" || order.status === "CANCELLED")) {
             await env.HONEYDEES_DB.delete(`order:${id}`);
             await env.HONEYDEES_DB.delete(`track:${order.trackingToken}`);
+            if (order.popHash) await env.HONEYDEES_DB.delete(`pophash:${order.popHash}`);
           } else {
             newIndex.push(id);
           }
@@ -206,6 +183,7 @@ export async function onRequest(context) {
           if (order) {
             await env.HONEYDEES_DB.delete(`order:${id}`);
             await env.HONEYDEES_DB.delete(`track:${order.trackingToken}`);
+            if (order.popHash) await env.HONEYDEES_DB.delete(`pophash:${order.popHash}`);
           }
         }
         await env.HONEYDEES_DB.put("index:orders", JSON.stringify([]));
@@ -231,4 +209,4 @@ function jsonResponse(data, status = 200) {
     status,
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
   });
-          }
+  }
