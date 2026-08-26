@@ -1,4 +1,4 @@
-const CACHE_NAME = "honeydees-v9-live";
+const CACHE_NAME = "honeydees-v10-live";
 const ASSETS = ["/", "/order", "/admin", "/manifest.json"];
 
 self.addEventListener("install", function(e) {
