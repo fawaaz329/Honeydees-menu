@@ -18,13 +18,13 @@
       <span class="text-xs font-bold text-[#c59b27]">Honeydees Order Tracker</span>
     </div>
     
-    <!-- BRANDED NOTIFICATION BANNER (Prevents Spam flag on Android) -->
+    <!-- BRANDED NOTIFICATION BANNER -->
     <div id="notifyPrompt" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-2xl text-center text-xs space-y-2">
-      <p class="font-bold text-amber-900">🔔 Enable lockscreen updates for your food?</p>
+      <p class="font-bold text-amber-900">🔔 Enable lockscreen food ready updates?</p>
       <button onclick="requestAlerts()" class="px-4 py-1.5 bg-[#c59b27] hover:bg-[#9e7914] text-white rounded-xl font-bold shadow text-xs">Allow Notifications</button>
     </div>
 
-    <!-- READY / ON THE WAY NOTIFICATION BANNER -->
+    <!-- DYNAMIC HERO STATUS BANNER -->
     <div id="statusHeroBanner" class="hidden p-4 rounded-2xl text-center animate-pulse">
       <span class="text-2xl" id="statusHeroIcon">🎉</span>
       <h3 class="font-extrabold text-sm mt-1" id="statusHeroTitle"></h3>
@@ -94,7 +94,7 @@
           if (r.ok) {
             const d = await r.json();
             
-            // NOTIFICATION TRANSITIONS (PREPARING vs READY vs ON THE WAY)
+            // Notification Transitions (Preparing vs Ready vs On the Way)
             if (cS[d.trackingToken] !== d.status) {
               if (d.status === 'PREPARING') {
                 triggerNativeNotification("Honeydees Feast Update", `👨‍🍳 Order #${d.orderNumber} is now being freshly prepared!`);
@@ -137,7 +137,7 @@
         } catch (e) { console.error(e); }
       }
 
-      // Auto-cleanup: Wipes completed orders from phone memory
+      // Auto-wipes completed orders from customer phone memory
       localStorage.setItem("hd_tokens", JSON.stringify(activeTokens));
       
       if (!activeTokens.length) {
