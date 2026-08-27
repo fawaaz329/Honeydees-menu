@@ -1,89 +1,18 @@
 const SEED_DATA = {
   settings: {
-    businessName: "Honeydees",
-    halalBadge: "100% Strictly Halal",
-    isStoreOpen: true,
-    operatingDays: "Friday",
-    openTime: "14:00",
-    closeTime: "21:30",
-    closedNotice: "We are currently closed for orders. Next ordering window opens Friday at 2:00 PM.",
-    heroHeading: "Cape Town's Friday Night Treat",
-    heroSubtitle: "Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.",
-    scheduleNotice: "Collection: 14 Viola St, Lentegeur (From 6:00 PM)",
-    collectionAddress: "14 Viola Street, Lentegeur, Mitchells Plain",
-    collectionTimes: "Fridays 6:00 PM–9:30 PM",
-    deliveryFee: 30,
-    bankName: "Standard Bank",
-    accountHolder: "Honeydees Food Enterprise",
-    accountNumber: "10192837465",
-    branchCode: "051001"
+    businessName: "Honeydees", halalBadge: "100% Strictly Halal", isStoreOpen: true, operatingDays: "Fridays Only",
+    openTime: "14:00", closeTime: "21:30", closedNotice: "We are currently closed.", heroHeading: "Cape Town's Friday Night Treat",
+    heroSubtitle: "Flame-grilled Masala steak sandwiches, saucy wraps & handcrafted mocktails.", scheduleNotice: "Collection: 14 Viola St, Lentegeur (From 6:00 PM)",
+    collectionAddress: "14 Viola Street, Lentegeur", deliveryFee: 30, bankName: "Standard Bank", accountHolder: "Honeydees Food Enterprise", accountNumber: "10192837465", branchCode: "051001"
   },
-  categories: [
-    { id: "cat_mains", name: "Main Meals" },
-    { id: "cat_wraps", name: "Wraps & Grills" },
-    { id: "cat_mocktails", name: "Artisanal Mocktails" },
-    { id: "cat_desserts", name: "Desserts & Treats" }
-  ],
-  menu: [
-    {
-      id: "item_1",
-      name: "Masala Steak Sandwich",
-      description: "Masala steak cutlets, crispy slap chips & fresh salad.",
-      price: 65,
-      categoryId: "cat_mains",
-      imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80",
-      available: true,
-      featured: true
-    },
-    {
-      id: "item_2",
-      name: "Full House Steak Sandwich",
-      description: "Masala steak, fried egg, cheese, chips & salad.",
-      price: 85,
-      categoryId: "cat_mains",
-      imageUrl: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80",
-      available: true,
-      featured: true
-    },
-    {
-      id: "item_3",
-      name: "Saucy Chicken Wrap",
-      description: "Flame-seared saucy chicken wrap with crispy chips & salads.",
-      price: 65,
-      categoryId: "cat_wraps",
-      imageUrl: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=600&auto=format&fit=crop&q=80",
-      available: true,
-      featured: false
-    },
-    {
-      id: "item_4",
-      name: "Watermelon & Passion Fruit Mocktail",
-      description: "Fresh crushed watermelon juice, passion fruit & sparkling soda.",
-      price: 20,
-      categoryId: "cat_mocktails",
-      imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80",
-      available: true,
-      featured: true
-    },
-    {
-      id: "item_5",
-      name: "Classic Rose Falooda",
-      description: "Cardamom rose milk, falooda noodles, tukmaria & vanilla ice cream.",
-      price: 30,
-      categoryId: "cat_desserts",
-      imageUrl: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&auto=format&fit=crop&q=80",
-      available: true,
-      featured: false
-    }
-  ]
+  categories: [{ id: "cat_mains", name: "Main Meals" }, { id: "cat_wraps", name: "Wraps & Grills" }],
+  menu: [{ id: "item_1", name: "Masala Steak Sandwich", description: "Masala steak cutlets & fresh salad.", price: 65, categoryId: "cat_mains", imageUrl: "", available: true, featured: true }]
 };
 
 async function sha256(b64) {
   const msg = new TextEncoder().encode(b64);
   const hash = await crypto.subtle.digest("SHA-256", msg);
-  return Array.from(new Uint8Array(hash))
-    .map(function(b) { return b.toString(16).padStart(2, "0"); })
-    .join("");
+  return Array.from(new Uint8Array(hash)).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
 }
 
 export async function onRequest(context) {
@@ -92,18 +21,47 @@ export async function onRequest(context) {
   const url = new URL(request.url);
 
   if (request.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      }
-    });
+    return new Response(null, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization" } });
+  }
+
+  // BINARY ENDPOINT FOR MENU IMAGES
+  if (request.method === "GET" && url.searchParams.get("image")) {
+    const b64 = await env.HONEYDEES_DB.get("image:" + url.searchParams.get("image"));
+    if (!b64) return new Response("Not found", { status: 404 });
+    const match = b64.match(/^data:(.+);base64,(.*)$/);
+    if (match) {
+      const buffer = Uint8Array.from(atob(match[2]), function(c) { return c.charCodeAt(0); });
+      return new Response(buffer, { headers: { "Content-Type": match[1], "Cache-Control": "public, max-age=31536000" }});
+    }
+    return new Response(b64);
   }
 
   const authHeader = request.headers.get("Authorization") || "";
-  const adminSecret = env.ADMIN_PASSWORD || "Honeydees2026!";
+  const adminSecret = env.ADMIN_PASSWORD;
+  if (!adminSecret) return jsonResponse({ error: "Server Configuration Error: Secret Missing." }, 500);
   const isAdmin = (authHeader === adminSecret);
+
+  // 🛡️ DUAL-FALLBACK POP VIEWER ENDPOINT (Finds both new & legacy uploads)
+  if (request.method === "GET" && url.searchParams.get("pop")) {
+    if (!isAdmin) return jsonResponse({ error: "Unauthorized" }, 401);
+    const tokenOrId = url.searchParams.get("pop");
+    
+    // 1. Check new isolated key
+    let b64 = await env.HONEYDEES_DB.get("pop:" + tokenOrId);
+    
+    // 2. If not found, check legacy order object
+    if (!b64) {
+      let orderId = await env.HONEYDEES_DB.get("track:" + tokenOrId);
+      if (!orderId) orderId = tokenOrId;
+      const order = await env.HONEYDEES_DB.get("order:" + orderId, "json");
+      if (order && order.popBase64) {
+        b64 = order.popBase64;
+      }
+    }
+    
+    if (!b64) return jsonResponse({ error: "No receipt file found for this order." }, 404);
+    return jsonResponse({ popBase64: b64 });
+  }
 
   try {
     if (request.method === "GET") {
@@ -129,12 +87,7 @@ export async function onRequest(context) {
           if (od) orders.push(od);
         }
       }
-
-      return jsonResponse({
-        authenticated: isAdmin,
-        public: { settings: st, categories: ct, menu: mn },
-        orders: isAdmin ? orders : undefined
-      });
+      return jsonResponse({ authenticated: isAdmin, public: { settings: st, categories: ct, menu: mn }, orders: isAdmin ? orders : undefined });
     }
 
     if (request.method === "POST") {
@@ -142,42 +95,17 @@ export async function onRequest(context) {
 
       if (body.action === "createOrder") {
         const settings = (await env.HONEYDEES_DB.get("settings", "json")) || SEED_DATA.settings;
-
-        let isClosed = false;
-        if (settings.isStoreOpen === false) {
-          isClosed = true;
-        } else {
-          const d = new Date();
-          const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-          const sast = new Date(utc + (3600000 * 2));
-          const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-          const currentDay = days[sast.getDay()];
-          const currentH = sast.getHours();
-          const currentM = sast.getMinutes();
-          const currentTimeStr = (currentH < 10 ? "0" + currentH : currentH) + ":" + (currentM < 10 ? "0" + currentM : currentM);
-          const opDays = (settings.operatingDays || "Friday").toLowerCase();
-
-          if (!opDays.includes(currentDay) && !opDays.includes("everyday") && !opDays.includes("all")) {
-            isClosed = true;
-          } else if (settings.openTime && settings.closeTime) {
-            if (currentTimeStr < settings.openTime || currentTimeStr > settings.closeTime) {
-              isClosed = true;
-            }
-          }
-        }
-
-        if (isClosed) {
-          return jsonResponse({ error: settings.closedNotice || "Store is currently closed for orders." }, 400);
-        }
+        const statusMode = settings.storeStatus || (settings.isStoreOpen === false ? "CLOSED" : "OPEN");
+        if (statusMode === "CLOSED") return jsonResponse({ error: settings.closedNotice || "Store is closed." }, 400);
 
         const customer = body.data.customer;
         const orderType = body.data.orderType;
         const deliveryAddress = body.data.deliveryAddress;
         const items = body.data.items;
 
-        if (orderType === "DELIVERY" && (!deliveryAddress || !deliveryAddress.trim())) {
-          return jsonResponse({ error: "Delivery address is required for delivery orders." }, 400);
-        }
+        if (!customer || !customer.name || !customer.phone) return jsonResponse({ error: "Name and phone required." }, 400);
+        if (!items || items.length === 0) return jsonResponse({ error: "Cart is empty." }, 400);
+        if (orderType === "DELIVERY" && (!deliveryAddress || !deliveryAddress.trim())) return jsonResponse({ error: "Delivery address required." }, 400);
 
         const menu = (await env.HONEYDEES_DB.get("menu", "json")) || SEED_DATA.menu;
         const menuMap = new Map(menu.map(function(item) { return [item.id, item]; }));
@@ -188,7 +116,7 @@ export async function onRequest(context) {
           const itm = items[i];
           const s = menuMap.get(itm.id);
           if (!s || !s.available) return jsonResponse({ error: "Item unavailable: " + itm.name }, 400);
-          const qty = Math.max(1, parseInt(itm.quantity, 10) || 1);
+          const qty = Math.min(20, Math.max(1, parseInt(itm.quantity, 10) || 1));
           const lineTotal = s.price * qty;
           subtotal += lineTotal;
           verifiedItems.push({ id: s.id, name: s.name, price: s.price, quantity: qty, lineTotal: lineTotal });
@@ -196,9 +124,19 @@ export async function onRequest(context) {
 
         const deliveryFee = (orderType === "DELIVERY") ? (Number(settings.deliveryFee) || 30) : 0;
         const total = subtotal + deliveryFee;
-        const orderNumber = "HNY" + Math.floor(100000 + Math.random() * 900000);
+        
+        let isUnique = false;
+        let orderNumber = "";
+        while (!isUnique) {
+          orderNumber = "HNY" + Math.floor(100000 + Math.random() * 900000);
+          const chk = await env.HONEYDEES_DB.get("ordernum:" + orderNumber);
+          if (!chk) {
+            await env.HONEYDEES_DB.put("ordernum:" + orderNumber, "1", { expirationTtl: 86400 * 30 });
+            isUnique = true;
+          }
+        }
+        
         const trackingToken = crypto.randomUUID();
-
         const newOrder = {
           id: "ord_" + Date.now(),
           orderNumber: orderNumber,
@@ -212,7 +150,6 @@ export async function onRequest(context) {
           total: total,
           status: "AWAITING PAYMENT",
           paymentStatus: "PENDING",
-          popBase64: null,
           popHash: null,
           createdAt: new Date().toLocaleDateString("en-GB") + " " + new Date().toLocaleTimeString("en-GB")
         };
@@ -232,23 +169,27 @@ export async function onRequest(context) {
         const popBase64 = body.data.popBase64;
         if (!popBase64) return jsonResponse({ error: "No receipt file provided" }, 400);
 
+        const sizeBytes = Math.ceil((popBase64.length * 3) / 4);
+        if (popBase64.includes("application/pdf") && sizeBytes > 2 * 1024 * 1024) return jsonResponse({ error: "PDF too large (Max 2MB)" }, 400);
+        if (popBase64.includes("image/") && sizeBytes > 1024 * 1024) return jsonResponse({ error: "Image too large (Max 1MB)" }, 400);
+
         const orderId = await env.HONEYDEES_DB.get("track:" + trackingToken);
         if (!orderId) return jsonResponse({ error: "Order not found" }, 404);
 
         const hash = await sha256(popBase64);
         const dup = await env.HONEYDEES_DB.get("pophash:" + hash);
         if (dup && dup !== orderId) {
-          return jsonResponse({ error: "⚠️ Duplicate POP. This exact receipt file was already used on another order." }, 400);
+          return jsonResponse({ error: "⚠️ Duplicate Proof of Payment. This exact receipt file was already used on another order." }, 400);
         }
 
         const order = await env.HONEYDEES_DB.get("order:" + orderId, "json");
         if (!order) return jsonResponse({ error: "Order record not found" }, 404);
 
-        order.popBase64 = popBase64;
         order.popHash = hash;
         order.status = "PAYMENT UNDER REVIEW";
         order.paymentStatus = "REVIEW";
 
+        await env.HONEYDEES_DB.put("pop:" + trackingToken, popBase64);
         await env.HONEYDEES_DB.put("pophash:" + hash, orderId);
         await env.HONEYDEES_DB.put("order:" + orderId, JSON.stringify(order));
         return jsonResponse({ success: true });
@@ -273,8 +214,8 @@ export async function onRequest(context) {
         order.paymentStatus = "REJECTED";
         order.status = "PAYMENT REJECTED";
         if (order.popHash) await env.HONEYDEES_DB.delete("pophash:" + order.popHash);
-        order.popBase64 = null;
         order.popHash = null;
+        await env.HONEYDEES_DB.delete("pop:" + order.trackingToken);
         await env.HONEYDEES_DB.put("order:" + orderId, JSON.stringify(order));
         return jsonResponse({ success: true });
       }
@@ -286,9 +227,8 @@ export async function onRequest(context) {
         if (!order) return jsonResponse({ error: "Order not found" }, 404);
 
         if (["PREPARING", "READY", "COMPLETED"].includes(status) && order.paymentStatus !== "VERIFIED") {
-          return jsonResponse({ error: "Security Restriction: Payment must be strictly VERIFIED before preparing or fulfilling." }, 400);
+          return jsonResponse({ error: "SERVER SECURITY BLOCK: Payment must be explicitly VERIFIED before preparing or fulfilling." }, 400);
         }
-
         order.status = status;
         await env.HONEYDEES_DB.put("order:" + orderId, JSON.stringify(order));
         return jsonResponse({ success: true });
@@ -303,6 +243,7 @@ export async function onRequest(context) {
           if (order && (order.status === "COMPLETED" || order.status === "CANCELLED")) {
             await env.HONEYDEES_DB.delete("order:" + id);
             await env.HONEYDEES_DB.delete("track:" + order.trackingToken);
+            await env.HONEYDEES_DB.delete("pop:" + order.trackingToken);
             if (order.popHash) await env.HONEYDEES_DB.delete("pophash:" + order.popHash);
           } else {
             newIndex.push(id);
@@ -320,6 +261,7 @@ export async function onRequest(context) {
           if (order) {
             await env.HONEYDEES_DB.delete("order:" + id);
             await env.HONEYDEES_DB.delete("track:" + order.trackingToken);
+            await env.HONEYDEES_DB.delete("pop:" + order.trackingToken);
             if (order.popHash) await env.HONEYDEES_DB.delete("pophash:" + order.popHash);
           }
         }
@@ -329,11 +271,21 @@ export async function onRequest(context) {
 
       if (body.action === "adminSaveAll") {
         const settings = body.data.settings;
-        const menu = body.data.menu;
         const categories = body.data.categories;
+        const menu = body.data.menu;
         if (settings) await env.HONEYDEES_DB.put("settings", JSON.stringify(settings));
-        if (menu) await env.HONEYDEES_DB.put("menu", JSON.stringify(menu));
         if (categories) await env.HONEYDEES_DB.put("categories", JSON.stringify(categories));
+        if (menu) {
+          for (let i = 0; i < menu.length; i++) {
+            if (menu[i].imageUrl && menu[i].imageUrl.startsWith("data:")) {
+              const sizeBytes = Math.ceil((menu[i].imageUrl.length * 3) / 4);
+              if (sizeBytes > 500 * 1024) return jsonResponse({ error: "Image for " + menu[i].name + " exceeds 500KB limit." }, 400);
+              await env.HONEYDEES_DB.put("image:" + menu[i].id, menu[i].imageUrl);
+              menu[i].imageUrl = "/api/data?image=" + menu[i].id;
+            }
+          }
+          await env.HONEYDEES_DB.put("menu", JSON.stringify(menu));
+        }
         return jsonResponse({ success: true });
       }
     }
@@ -351,4 +303,4 @@ function jsonResponse(data, status) {
       "Access-Control-Allow-Origin": "*"
     }
   });
-          }
+      }
